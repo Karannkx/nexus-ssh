@@ -23,9 +23,11 @@ data class ServerEntity(
     val port: Int = 22,
     val username: String,
     val authType: AuthType,
+    // Encrypted via KeystoreManager
     val encryptedSecret: String,
     val encryptedPassphrase: String = "",
     val keyType: KeyType = KeyType.AUTO,
+    // SSH Host Key fingerprint (e.g. SHA256:abc...)
     val knownHostFingerprint: String? = null,
     val lastConnectedAt: Long? = null,
     val colorHex: String = "#0EA5E9"

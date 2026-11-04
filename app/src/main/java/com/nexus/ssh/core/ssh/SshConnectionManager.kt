@@ -12,9 +12,11 @@ import net.schmizz.sshj.SSHClient
 import net.schmizz.sshj.common.SecurityUtils
 import net.schmizz.sshj.transport.verification.HostKeyVerifier
 import net.schmizz.sshj.userauth.keyprovider.KeyProvider
+import net.schmizz.sshj.userauth.password.PasswordFinder
+import net.schmizz.sshj.userauth.password.Resource
+import java.io.ByteArrayInputStream
+import java.io.InputStreamReader
 import java.security.PublicKey
-import javax.inject.Inject
-import javax.inject.Singleton
 
 sealed interface ConnectionState {
     object Disconnected : ConnectionState
@@ -30,8 +32,7 @@ sealed interface ConnectionState {
     data class Error(val message: String, val cause: Throwable? = null) : ConnectionState
 }
 
-@Singleton
-class SshConnectionManager @Inject constructor(
+class SshConnectionManager(
     private val keystoreManager: KeystoreManager
 ) {
     private var sshClient: SSHClient? = null
@@ -53,6 +54,7 @@ class SshConnectionManager @Inject constructor(
             var pendingFingerprint: String? = null
             var pendingKeyAlgo: String = ""
 
+            // Host key verification logic
             client.addHostKeyVerifier(object : HostKeyVerifier {
                 override fun verify(hostname: String, port: Int, key: PublicKey): Boolean {
                     val fingerprint = SecurityUtils.getFingerprint(key)
@@ -61,9 +63,11 @@ class SshConnectionManager @Inject constructor(
 
                     if (bypassHostCheck) return true
 
+                    // Compare against saved fingerprint if available
                     if (server.knownHostFingerprint != null) {
                         return server.knownHostFingerprint == fingerprint
                     }
+                    // Requires user manual confirmation
                     return false
                 }
 
@@ -88,6 +92,7 @@ class SshConnectionManager @Inject constructor(
                 throw e
             }
 
+            // Authenticate
             val decryptedSecret = try {
                 keystoreManager.decrypt(server.encryptedSecret)
             } catch (_: Exception) {
@@ -100,7 +105,7 @@ class SshConnectionManager @Inject constructor(
                 }
                 AuthType.PRIVATE_KEY -> {
                     val passphrase = if (server.encryptedPassphrase.isNotEmpty()) {
-                        try { keystoreManager.decrypt(server.encryptedPassphrase) } catch (_: Exception) { server.encryptedPassphrase }
+                        keystoreManager.decrypt(server.encryptedPassphrase)
                     } else ""
 
                     val keyProvider: KeyProvider = if (passphrase.isNotEmpty()) {
@@ -142,6 +147,9 @@ class SshConnectionManager @Inject constructor(
             Result.failure(e)
         }
     }
+
+    fun getClient(): SSHClient? = sshClient
+    fun getCurrentServer(): ServerEntity? = currentServer
 
     suspend fun disconnect() = withContext(Dispatchers.IO) {
         disconnectInternal()
