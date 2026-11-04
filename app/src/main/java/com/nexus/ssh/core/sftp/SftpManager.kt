@@ -3,12 +3,9 @@ package com.nexus.ssh.core.sftp
 import com.nexus.ssh.core.ssh.SshConnectionManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import net.schmizz.sshj.sftp.FileAttributes
-import net.schmizz.sshj.sftp.FileMode
-import net.schmizz.sshj.sftp.RemoteResourceInfo
+import net.schmizz.sshj.sftp.OpenMode
 import net.schmizz.sshj.sftp.SFTPClient
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
+import java.io.IOException
 
 data class RemoteFileItem(
     val name: String,
@@ -22,31 +19,51 @@ data class RemoteFileItem(
 class SftpManager(
     private val connectionManager: SshConnectionManager
 ) {
+    companion object {
+        const val MAX_EDIT_BYTES = 1024 * 1024L
+    }
+
     private var sftpClient: SFTPClient? = null
 
-    private fun getOrCreateSftp(): SFTPClient {
+    private fun sftp(): SFTPClient {
+        sftpClient?.let { return it }
         val client = connectionManager.getClient()
             ?: throw IllegalStateException("SSH not connected")
-        if (sftpClient == null) {
-            sftpClient = client.newSFTPClient()
+        return client.newSFTPClient().also { sftpClient = it }
+    }
+
+    private fun permissionString(mask: Int, isDir: Boolean): String {
+        val sb = StringBuilder(if (isDir) "d" else "-")
+        val bits = "rwxrwxrwx"
+        for (i in 0 until 9) {
+            sb.append(if (mask and (1 shl (8 - i)) != 0) bits[i] else '-')
         }
-        return sftpClient!!
+        return sb.toString()
+    }
+
+    suspend fun homeDir(): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            Result.success(sftp().canonicalize("."))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     suspend fun listFiles(remoteDir: String): Result<List<RemoteFileItem>> = withContext(Dispatchers.IO) {
         try {
-            val sftp = getOrCreateSftp()
-            val list = sftp.ls(remoteDir)
-            val items = list.map { res: RemoteResourceInfo ->
-                RemoteFileItem(
-                    name = res.name,
-                    path = res.path,
-                    isDirectory = res.isDirectory,
-                    size = res.attributes.size,
-                    permissions = res.attributes.mode.toString(),
-                    mtime = res.attributes.mtime * 1000L
-                )
-            }.sortedWith(compareBy({ !it.isDirectory }, { it.name.lowercase() }))
+            val items = sftp().ls(remoteDir)
+                .filter { it.name != "." && it.name != ".." }
+                .map { res ->
+                    RemoteFileItem(
+                        name = res.name,
+                        path = res.path,
+                        isDirectory = res.isDirectory,
+                        size = res.attributes.size,
+                        permissions = permissionString(res.attributes.mode.mask, res.isDirectory),
+                        mtime = res.attributes.mtime * 1000L
+                    )
+                }
+                .sortedWith(compareBy({ !it.isDirectory }, { it.name.lowercase() }))
             Result.success(items)
         } catch (e: Exception) {
             Result.failure(e)
@@ -55,18 +72,15 @@ class SftpManager(
 
     suspend fun readTextFile(remotePath: String): Result<String> = withContext(Dispatchers.IO) {
         try {
-            val sftp = getOrCreateSftp()
-            val file = sftp.open(remotePath)
-            val bytes = ByteArrayOutputStream()
-            val buf = ByteArray(4096)
-            var read: Int
-            val input = file.RemoteFileInputStream()
-            while (input.read(buf).also { read = it } != -1) {
-                bytes.write(buf, 0, read)
+            val text = sftp().open(remotePath).use { file ->
+                val length = file.length()
+                if (length > MAX_EDIT_BYTES) {
+                    throw IOException("File is too large to edit here (${length / 1024} KB, limit ${MAX_EDIT_BYTES / 1024} KB)")
+                }
+                val bytes = file.RemoteFileInputStream().use { it.readBytes() }
+                String(bytes, Charsets.UTF_8)
             }
-            input.close()
-            file.close()
-            Result.success(bytes.toString(Charsets.UTF_8.name()))
+            Result.success(text)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -74,13 +88,13 @@ class SftpManager(
 
     suspend fun writeTextFile(remotePath: String, content: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val sftp = getOrCreateSftp()
-            val file = sftp.open(remotePath, setOf(net.schmizz.sshj.sftp.OpenMode.CREAT, net.schmizz.sshj.sftp.OpenMode.WRITE, net.schmizz.sshj.sftp.OpenMode.TRUNC))
-            val output = file.RemoteFileOutputStream()
-            output.write(content.toByteArray(Charsets.UTF_8))
-            output.flush()
-            output.close()
-            file.close()
+            val modes = setOf(OpenMode.WRITE, OpenMode.CREAT, OpenMode.TRUNC)
+            sftp().open(remotePath, modes).use { file ->
+                file.RemoteFileOutputStream().use { out ->
+                    out.write(content.toByteArray(Charsets.UTF_8))
+                    out.flush()
+                }
+            }
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -89,22 +103,28 @@ class SftpManager(
 
     suspend fun deleteFile(remotePath: String, isDir: Boolean): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val sftp = getOrCreateSftp()
-            if (isDir) {
-                sftp.rmdir(remotePath)
-            } else {
-                sftp.rm(remotePath)
-            }
+            deleteRecursive(sftp(), remotePath, isDir)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
+    private fun deleteRecursive(client: SFTPClient, path: String, isDir: Boolean) {
+        if (isDir) {
+            for (child in client.ls(path)) {
+                if (child.name == "." || child.name == "..") continue
+                deleteRecursive(client, child.path, child.isDirectory)
+            }
+            client.rmdir(path)
+        } else {
+            client.rm(path)
+        }
+    }
+
     suspend fun createDirectory(remotePath: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val sftp = getOrCreateSftp()
-            sftp.mkdir(remotePath)
+            sftp().mkdir(remotePath)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -114,7 +134,8 @@ class SftpManager(
     fun close() {
         try {
             sftpClient?.close()
-        } catch (_: Exception) {}
+        } catch (ignored: Exception) {
+        }
         sftpClient = null
     }
 }

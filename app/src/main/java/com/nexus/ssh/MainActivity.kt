@@ -5,65 +5,27 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nexus.ssh.core.database.AuthType
-import com.nexus.ssh.core.database.KeyType
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nexus.ssh.core.database.ServerEntity
-import com.nexus.ssh.core.security.KeystoreManager
 import com.nexus.ssh.core.ssh.ConnectionState
-import com.nexus.ssh.core.ssh.SshConnectionManager
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-
-// Premium Dark Theme Palette (ServerUI / Termius Developer aesthetic)
-val NexusDarkNavy = Color(0xFF070A12)
-val NexusCardNavy = Color(0xFF0F172A)
-val NexusBorderNavy = Color(0xFF1E293B)
-val NexusCyan = Color(0xFF38BDF8)
-val NexusEmerald = Color(0xFF10B981)
-val NexusAmber = Color(0xFFF59E0B)
-val NexusRose = Color(0xFFF43F5E)
-
-private val DarkColorScheme = darkColorScheme(
-    primary = NexusCyan,
-    onPrimary = Color.Black,
-    secondary = NexusEmerald,
-    onSecondary = Color.Black,
-    background = NexusDarkNavy,
-    surface = NexusCardNavy,
-    surfaceVariant = NexusBorderNavy,
-    onBackground = Color.White,
-    onSurface = Color.White
-)
-
-@Composable
-fun NexusTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = DarkColorScheme,
-        content = content
-    )
-}
+import com.nexus.ssh.ui.*
+import com.nexus.ssh.ui.screens.*
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,217 +33,148 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             NexusTheme {
-                NexusRealApp()
+                NexusApp()
             }
         }
     }
 }
 
+private data class NavTab(val label: String, val icon: ImageVector)
+
+private val NAV_TABS = listOf(
+    NavTab("Dashboard", Icons.Default.Dashboard),
+    NavTab("Terminal", Icons.Default.Terminal),
+    NavTab("Files", Icons.Default.Folder),
+    NavTab("Docker", Icons.Default.Layers),
+    NavTab("Services", Icons.Default.Settings)
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NexusRealApp() {
-    val coroutineScope = rememberCoroutineScope()
-    val keystoreManager = remember { KeystoreManager() }
-    val sshManager = remember { SshConnectionManager(keystoreManager) }
+fun NexusApp(vm: NexusViewModel = viewModel()) {
+    val servers by vm.servers.collectAsState()
+    val loaded by vm.serversLoaded.collectAsState()
+    val selected by vm.selectedServer.collectAsState()
+    val connection by vm.connectionState.collectAsState()
+    val telemetry by vm.telemetry.collectAsState()
+    val terminalLines by vm.terminalLines.collectAsState()
+    val files by vm.files.collectAsState()
+    val openFile by vm.openFile.collectAsState()
+    val docker by vm.docker.collectAsState()
+    val services by vm.services.collectAsState()
 
-    // Saved Server Profiles list
-    val servers = remember {
-        mutableStateListOf(
-            ServerEntity(
-                id = 1,
-                name = "Primary VPS",
-                hostname = "192.168.1.100",
-                port = 22,
-                username = "root",
-                authType = AuthType.PASSWORD,
-                encryptedSecret = keystoreManager.encrypt("password123"),
-                keyType = KeyType.AUTO
-            )
-        )
-    }
+    val snackbarHost = remember { SnackbarHostState() }
+    LaunchedEffect(Unit) { vm.messages.collect { snackbarHost.showSnackbar(it) } }
 
-    var selectedServerIndex by remember { mutableIntStateOf(0) }
-    val currentServer = servers.getOrNull(selectedServerIndex) ?: servers.first()
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    var showAdd by remember { mutableStateOf(false) }
+    var showSwitcher by remember { mutableStateOf(false) }
+    var deleteTarget by remember { mutableStateOf<ServerEntity?>(null) }
 
-    var selectedTab by remember { mutableIntStateOf(0) }
-    var isConnecting by remember { mutableStateOf(false) }
-    var connectionError by remember { mutableStateOf<String?>(null) }
-    var isConnected by remember { mutableStateOf(false) }
+    val isConnected = connection is ConnectionState.Connected
+    val isConnecting = connection is ConnectionState.Connecting
 
-    // Dialog states
-    var showAddServerDialog by remember { mutableStateOf(false) }
-    var showServerSwitcherSheet by remember { mutableStateOf(false) }
-    var pendingHostKeyConfirmation by remember { mutableStateOf<Pair<String, String>?>(null) }
-
-    // Real dynamic telemetry data fetched from remote server over SSH
-    var remoteKernel by remember { mutableStateOf("Linux 6.8.0-generic x86_64") }
-    var remoteUptime by remember { mutableStateOf("Not connected") }
-    var remoteCpuUsage by remember { mutableStateOf(15.2f) }
-    var remoteMemUsage by remember { mutableStateOf("4.2 / 16.0 GB") }
-    var remoteMemPercent by remember { mutableStateOf(0.26f) }
-    var remoteDiskUsage by remember { mutableStateOf("38 / 120 GB") }
-
-    // Terminal lines
-    val terminalLines = remember {
-        mutableStateListOf(
-            "NEXUS SSH Engine v1.0.0 (Native Android Client)",
-            "Hardware-backed AES-256 GCM encryption initialized.",
-            "Select a server and tap 'Connect' to open a real SSH channel."
-        )
-    }
-
-    // Connect handler (Uses real SSHJ socket connection on IO dispatcher)
-    fun connectToServer(bypassHostCheck: Boolean = false) {
-        coroutineScope.launch {
-            isConnecting = true
-            connectionError = null
-            terminalLines.add("Connecting to ${currentServer.username}@${currentServer.hostname}:${currentServer.port}...")
-
-            val result = sshManager.connect(currentServer, bypassHostCheck = bypassHostCheck)
-            isConnecting = false
-
-            result.onSuccess {
-                isConnected = true
-                terminalLines.add("✓ Authenticated successfully with ${currentServer.authType.name}")
-                terminalLines.add("SSH Channel established. Session active.")
-
-                // Query real server stats over SSH
-                val unameRes = sshManager.executeCommand("uname -a")
-                unameRes.onSuccess {
-                    remoteKernel = it.take(45)
-                    terminalLines.add(it)
-                }
-
-                val uptimeRes = sshManager.executeCommand("uptime")
-                uptimeRes.onSuccess {
-                    remoteUptime = it.trim()
-                }
-
-                val memRes = sshManager.executeCommand("free -m | awk 'NR==2{printf \"%.1f / %.1f GB\", \$3/1024, \$2/1024}'")
-                memRes.onSuccess {
-                    remoteMemUsage = it.trim()
-                }
-
-                val dfRes = sshManager.executeCommand("df -h / | awk 'NR==2{print \$3 \" / \" \$2}'")
-                dfRes.onSuccess {
-                    remoteDiskUsage = it.trim()
-                }
-            }.onFailure { error ->
-                isConnected = false
-                if (error is SecurityException && error.message?.contains("Host key") == true) {
-                    val state = sshManager.connectionState.value
-                    if (state is ConnectionState.HostKeyConfirmationRequired) {
-                        pendingHostKeyConfirmation = Pair(state.keyAlgorithm, state.fingerprint)
-                    } else {
-                        pendingHostKeyConfirmation = Pair("ED25519", "SHA256:${currentServer.hostname.hashCode()}")
-                    }
-                } else {
-                    val msg = error.localizedMessage ?: "Connection error"
-                    connectionError = msg
-                    terminalLines.add("✗ Error: $msg")
-                }
+    LaunchedEffect(selectedTab, isConnected) {
+        vm.setDashboardVisible(selectedTab == 0 && isConnected)
+        if (isConnected) {
+            when (selectedTab) {
+                3 -> vm.refreshDocker()
+                4 -> vm.refreshServices()
+                else -> {}
             }
         }
     }
 
-    fun disconnectFromServer() {
-        coroutineScope.launch {
-            sshManager.disconnect()
-            isConnected = false
-            terminalLines.add("Disconnected from ${currentServer.hostname}.")
-        }
-    }
-
-    val navItems = listOf(
-        NavItem("Dashboard", Icons.Default.Dashboard),
-        NavItem("Terminal", Icons.Default.Terminal),
-        NavItem("Files", Icons.Default.Folder),
-        NavItem("Docker", Icons.Default.Layers),
-        NavItem("Services", Icons.Default.Settings)
-    )
+    val server = selected
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHost) },
+        containerColor = NexusDarkNavy,
         topBar = {
             TopAppBar(
                 title = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
-                            .clickable { showServerSwitcherSheet = true }
+                            .clickable(enabled = server != null) { showSwitcher = true }
                             .padding(vertical = 4.dp)
                     ) {
                         Box(
                             modifier = Modifier
                                 .size(8.dp)
                                 .background(
-                                    if (isConnected) NexusEmerald else if (isConnecting) NexusAmber else Color.Gray,
+                                    when {
+                                        isConnected -> NexusEmerald
+                                        isConnecting -> NexusAmber
+                                        else -> Color.Gray
+                                    },
                                     shape = RoundedCornerShape(4.dp)
                                 )
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(Modifier.width(8.dp))
                         Column {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = currentServer.name,
+                                    text = server?.name ?: "Nexus SSH",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color.White
+                                    maxLines = 1
                                 )
-                                Icon(
-                                    Icons.Default.ArrowDropDown,
-                                    contentDescription = "Switch Server",
-                                    tint = Color.Gray,
-                                    modifier = Modifier.size(20.dp)
+                                if (server != null) {
+                                    Icon(
+                                        Icons.Default.ArrowDropDown,
+                                        contentDescription = "Switch server",
+                                        tint = Color.Gray,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                            if (server != null) {
+                                Text(
+                                    text = "${server.username}@${server.hostname}:${server.port}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontFamily = FontFamily.Monospace,
+                                    color = NexusMuted,
+                                    maxLines = 1
                                 )
                             }
-                            Text(
-                                text = "${currentServer.username}@${currentServer.hostname}:${currentServer.port}",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontFamily = FontFamily.Monospace,
-                                color = Color(0xFF94A3B8)
-                            )
                         }
                     }
                 },
                 actions = {
-                    // + Add Server button
-                    IconButton(
-                        onClick = { showAddServerDialog = true }
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = "Add Server", tint = NexusCyan)
+                    IconButton(onClick = { showAdd = true }) {
+                        Icon(Icons.Default.Add, contentDescription = "Add server", tint = NexusCyan)
                     }
-
-                    // Connect / Disconnect Action Button
-                    Button(
-                        onClick = {
-                            if (isConnected) {
-                                disconnectFromServer()
+                    if (server != null) {
+                        Button(
+                            onClick = { if (isConnected) vm.disconnect() else vm.connect() },
+                            enabled = !isConnecting,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isConnected) NexusRose.copy(alpha = 0.2f) else NexusEmerald.copy(alpha = 0.2f),
+                                contentColor = if (isConnected) NexusRose else NexusEmerald,
+                                disabledContainerColor = NexusAmber.copy(alpha = 0.2f),
+                                disabledContentColor = NexusAmber
+                            ),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                            modifier = Modifier.height(34.dp)
+                        ) {
+                            if (isConnecting) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    color = NexusAmber,
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text("Connecting…", fontSize = 12.sp)
                             } else {
-                                connectToServer(bypassHostCheck = false)
+                                Text(
+                                    text = if (isConnected) "Disconnect" else "Connect",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isConnected) NexusRose.copy(alpha = 0.2f) else NexusEmerald.copy(alpha = 0.2f),
-                            contentColor = if (isConnected) NexusRose else NexusEmerald
-                        ),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                        modifier = Modifier.height(34.dp)
-                    ) {
-                        if (isConnecting) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                color = NexusAmber,
-                                strokeWidth = 2.dp
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Connecting...", fontSize = 12.sp)
-                        } else {
-                            Text(
-                                text = if (isConnected) "Disconnect" else "Connect",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold
-                            )
                         }
+                        Spacer(Modifier.width(8.dp))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -291,712 +184,152 @@ fun NexusRealApp() {
             )
         },
         bottomBar = {
-            NavigationBar(
-                containerColor = NexusCardNavy,
-                tonalElevation = 8.dp
-            ) {
-                navItems.forEachIndexed { index, item ->
-                    NavigationBarItem(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
-                        icon = { Icon(item.icon, contentDescription = item.label) },
-                        label = { Text(item.label, fontSize = 11.sp) },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = NexusCyan,
-                            selectedTextColor = NexusCyan,
-                            indicatorColor = NexusCyan.copy(alpha = 0.15f),
-                            unselectedIconColor = Color(0xFF94A3B8),
-                            unselectedTextColor = Color(0xFF94A3B8)
+            if (server != null) {
+                NavigationBar(containerColor = NexusCardNavy, tonalElevation = 8.dp) {
+                    NAV_TABS.forEachIndexed { index, tab ->
+                        NavigationBarItem(
+                            selected = selectedTab == index,
+                            onClick = { selectedTab = index },
+                            icon = { Icon(tab.icon, contentDescription = tab.label) },
+                            label = { Text(tab.label, fontSize = 11.sp) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = NexusCyan,
+                                selectedTextColor = NexusCyan,
+                                indicatorColor = NexusCyan.copy(alpha = 0.15f),
+                                unselectedIconColor = NexusMuted,
+                                unselectedTextColor = NexusMuted
+                            )
                         )
-                    )
+                    }
                 }
             }
-        },
-        containerColor = NexusDarkNavy
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            when (selectedTab) {
-                0 -> RealDashboardScreen(
-                    isConnected = isConnected,
-                    server = currentServer,
-                    kernel = remoteKernel,
-                    uptime = remoteUptime,
-                    cpuUsage = remoteCpuUsage,
-                    memUsage = remoteMemUsage,
-                    diskUsage = remoteDiskUsage,
-                    onConnectClick = { connectToServer() }
-                )
-                1 -> RealTerminalScreen(
-                    lines = terminalLines,
-                    isConnected = isConnected,
-                    onExecuteCommand = { cmd ->
-                        terminalLines.add("${currentServer.username}@${currentServer.hostname}:~$ $cmd")
-                        if (isConnected) {
-                            coroutineScope.launch {
-                                val res = sshManager.executeCommand(cmd)
-                                res.onSuccess { output ->
-                                    if (output.isNotBlank()) terminalLines.add(output)
-                                }.onFailure { err ->
-                                    terminalLines.add("Error: ${err.localizedMessage}")
-                                }
-                            }
-                        } else {
-                            terminalLines.add("Not connected. Tap 'Connect' in the top bar to run real commands.")
-                        }
-                    }
-                )
-                2 -> RealFilesScreen(
-                    isConnected = isConnected,
-                    onRefresh = {
-                        if (isConnected) {
-                            coroutineScope.launch {
-                                val res = sshManager.executeCommand("ls -la /")
-                                res.onSuccess { terminalLines.add(it) }
-                            }
-                        }
-                    }
-                )
-                3 -> RealDockerScreen(
-                    isConnected = isConnected,
-                    onRunDockerPs = {
-                        if (isConnected) {
-                            coroutineScope.launch {
-                                val res = sshManager.executeCommand("docker ps")
-                                res.onSuccess { terminalLines.add(it) }
-                            }
-                        }
-                    }
-                )
-                4 -> RealServicesScreen(
-                    isConnected = isConnected,
-                    onRestartSshd = {
-                        if (isConnected) {
-                            coroutineScope.launch {
-                                sshManager.executeCommand("sudo systemctl status sshd")
-                            }
-                        }
-                    }
-                )
+        }
+    ) { padding ->
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+            if (server == null) {
+                if (loaded) {
+                    EmptyServers(onAdd = { showAdd = true })
+                } else {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = NexusCyan)
+                }
+            } else {
+                when (selectedTab) {
+                    0 -> DashboardScreen(
+                        server = server,
+                        connection = connection,
+                        telemetry = telemetry,
+                        onConnect = vm::connect,
+                        onRefresh = vm::refreshTelemetry
+                    )
+                    1 -> TerminalScreen(
+                        connected = isConnected,
+                        lines = terminalLines,
+                        onSendLine = { vm.sendTerminalInput(it + "\r") },
+                        onSendRaw = vm::sendTerminalInput,
+                        onClear = vm::clearTerminal,
+                        onResize = vm::resizeTerminal
+                    )
+                    2 -> FilesScreen(
+                        connected = isConnected,
+                        state = files,
+                        openFile = openFile,
+                        onOpenItem = vm::filesOpen,
+                        onUp = vm::filesUp,
+                        onRefresh = vm::filesRefresh,
+                        onMkdir = vm::filesMkdir,
+                        onDelete = vm::filesDelete,
+                        onSaveFile = vm::saveOpenFile,
+                        onCloseFile = vm::closeOpenFile
+                    )
+                    3 -> DockerScreen(
+                        connected = isConnected,
+                        state = docker,
+                        onRefresh = vm::refreshDocker,
+                        onAction = vm::dockerAction
+                    )
+                    4 -> ServicesScreen(
+                        connected = isConnected,
+                        state = services,
+                        onRefresh = vm::refreshServices,
+                        onAction = vm::serviceAction
+                    )
+                    else -> {}
+                }
             }
         }
     }
 
-    // Add Server Dialog
-    if (showAddServerDialog) {
+    if (showAdd) {
         AddServerDialog(
-            onDismiss = { showAddServerDialog = false },
-            onSave = { newServer ->
-                servers.add(newServer)
-                selectedServerIndex = servers.lastIndex
-                showAddServerDialog = false
-            },
-            keystoreManager = keystoreManager
+            onDismiss = { showAdd = false },
+            onSave = { name, host, port, user, authType, secret, passphrase ->
+                vm.addServer(name, host, port, user, authType, secret, passphrase)
+                showAdd = false
+            }
         )
     }
 
-    // Host Key Verification Dialog (Zero-trust SSH security)
-    if (pendingHostKeyConfirmation != null) {
-        val (keyAlgo, fingerprint) = pendingHostKeyConfirmation!!
+    val state = connection
+    if (state is ConnectionState.HostKeyConfirmationRequired) {
+        HostKeyDialog(
+            server = state.server,
+            keyAlgorithm = state.keyAlgorithm,
+            fingerprint = state.fingerprint,
+            onTrust = vm::trustHostKey,
+            onCancel = vm::dismissHostKeyPrompt
+        )
+    }
+
+    if (showSwitcher) {
+        ServerSwitcherSheet(
+            servers = servers,
+            selectedId = server?.id,
+            onSelect = {
+                vm.selectServer(it.id)
+                showSwitcher = false
+            },
+            onAdd = {
+                showSwitcher = false
+                showAdd = true
+            },
+            onDelete = { deleteTarget = it },
+            onDismiss = { showSwitcher = false }
+        )
+    }
+
+    deleteTarget?.let { target ->
         AlertDialog(
-            onDismissRequest = { pendingHostKeyConfirmation = null },
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Security, contentDescription = null, tint = NexusAmber)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Unknown SSH Host Key", color = Color.White, fontWeight = FontWeight.Bold)
-                }
-            },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        "The authenticity of host '${currentServer.hostname}:${currentServer.port}' cannot be established.",
-                        color = Color.LightGray,
-                        fontSize = 13.sp
-                    )
-                    Text(
-                        "Key Algorithm: $keyAlgo",
-                        color = NexusCyan,
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 12.sp
-                    )
-                    Text(
-                        "Fingerprint:",
-                        color = Color.Gray,
-                        fontSize = 12.sp
-                    )
-                    Text(
-                        fingerprint,
-                        color = Color.White,
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 11.sp,
-                        modifier = Modifier
-                            .background(NexusDarkNavy, RoundedCornerShape(6.dp))
-                            .padding(8.dp)
-                    )
-                    Text(
-                        "Do you want to trust this host key and continue connecting?",
-                        color = Color.LightGray,
-                        fontSize = 13.sp
-                    )
-                }
-            },
+            onDismissRequest = { deleteTarget = null },
+            title = { Text("Delete ${target.name}?") },
+            text = { Text("The saved credentials and trusted host key for this server will be removed from this device.") },
             confirmButton = {
-                Button(
-                    onClick = {
-                        pendingHostKeyConfirmation = null
-                        connectToServer(bypassHostCheck = true)
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = NexusCyan)
-                ) {
-                    Text("Trust & Connect", color = Color.Black, fontWeight = FontWeight.Bold)
-                }
+                TextButton(onClick = {
+                    vm.deleteServer(target)
+                    deleteTarget = null
+                    showSwitcher = false
+                }) { Text("Delete", color = NexusRose) }
             },
-            dismissButton = {
-                TextButton(onClick = { pendingHostKeyConfirmation = null }) {
-                    Text("Cancel", color = Color.Gray)
-                }
-            },
+            dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text("Cancel") } },
             containerColor = NexusCardNavy
         )
     }
-
-    // Server Switcher Sheet
-    if (showServerSwitcherSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showServerSwitcherSheet = false },
-            containerColor = NexusCardNavy
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Saved Linux Servers", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
-                    IconButton(onClick = {
-                        showServerSwitcherSheet = false
-                        showAddServerDialog = true
-                    }) {
-                        Icon(Icons.Default.Add, contentDescription = "Add", tint = NexusCyan)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                servers.forEachIndexed { idx, srv ->
-                    val isSelected = idx == selectedServerIndex
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isSelected) NexusBorderNavy else NexusDarkNavy
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                            .clickable {
-                                selectedServerIndex = idx
-                                showServerSwitcherSheet = false
-                            }
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(srv.name, fontWeight = FontWeight.Bold, color = Color.White)
-                                Text("${srv.username}@${srv.hostname}:${srv.port}", color = Color.Gray, fontFamily = FontFamily.Monospace, fontSize = 12.sp)
-                            }
-                            if (isSelected) {
-                                Icon(Icons.Default.Check, contentDescription = "Selected", tint = NexusCyan)
-                            }
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(24.dp))
-            }
-        }
-    }
-}
-
-// Add Server Dialog with Real Input Fields & Encryption
-@Composable
-fun AddServerDialog(
-    onDismiss: () -> Unit,
-    onSave: (ServerEntity) -> Unit,
-    keystoreManager: KeystoreManager
-) {
-    var name by remember { mutableStateOf("") }
-    var hostname by remember { mutableStateOf("") }
-    var port by remember { mutableStateOf("22") }
-    var username by remember { mutableStateOf("root") }
-    var authType by remember { mutableStateOf(AuthType.PASSWORD) }
-    var secretInput by remember { mutableStateOf("") }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Add Linux Server", fontWeight = FontWeight.Bold, color = Color.White) },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Server Name") },
-                    placeholder = { Text("e.g. My Ubuntu VPS") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = hostname,
-                        onValueChange = { hostname = it },
-                        label = { Text("Hostname / IP") },
-                        placeholder = { Text("192.168.1.50") },
-                        singleLine = true,
-                        modifier = Modifier.weight(0.7f)
-                    )
-                    OutlinedTextField(
-                        value = port,
-                        onValueChange = { port = it },
-                        label = { Text("Port") },
-                        singleLine = true,
-                        modifier = Modifier.weight(0.3f)
-                    )
-                }
-                OutlinedTextField(
-                    value = username,
-                    onValueChange = { username = it },
-                    label = { Text("Username") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                // Auth type switch
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(
-                        selected = authType == AuthType.PASSWORD,
-                        onClick = { authType = AuthType.PASSWORD },
-                        label = { Text("Password") }
-                    )
-                    FilterChip(
-                        selected = authType == AuthType.PRIVATE_KEY,
-                        onClick = { authType = AuthType.PRIVATE_KEY },
-                        label = { Text("Private Key") }
-                    )
-                }
-
-                OutlinedTextField(
-                    value = secretInput,
-                    onValueChange = { secretInput = it },
-                    label = { Text(if (authType == AuthType.PASSWORD) "SSH Password" else "Private Key (OpenSSH)") },
-                    visualTransformation = if (authType == AuthType.PASSWORD) PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = if (authType == AuthType.PASSWORD) 1 else 3
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (name.isNotBlank() && hostname.isNotBlank()) {
-                        val encryptedSecret = keystoreManager.encrypt(secretInput)
-                        val server = ServerEntity(
-                            id = System.currentTimeMillis(),
-                            name = name.trim(),
-                            hostname = hostname.trim(),
-                            port = port.toIntOrNull() ?: 22,
-                            username = username.trim(),
-                            authType = authType,
-                            encryptedSecret = encryptedSecret,
-                            keyType = KeyType.AUTO
-                        )
-                        onSave(server)
-                    }
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = NexusCyan)
-            ) {
-                Text("Save Server", color = Color.Black, fontWeight = FontWeight.Bold)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel", color = Color.Gray)
-            }
-        },
-        containerColor = NexusCardNavy
-    )
 }
 
 @Composable
-fun RealDashboardScreen(
-    isConnected: Boolean,
-    server: ServerEntity,
-    kernel: String,
-    uptime: String,
-    cpuUsage: Float,
-    memUsage: String,
-    diskUsage: String,
-    onConnectClick: () -> Unit
-) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        item {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = NexusCardNavy),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.dp, NexusBorderNavy, RoundedCornerShape(16.dp))
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "SERVER STATUS",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = FontFamily.Monospace,
-                            color = if (isConnected) NexusEmerald else NexusRose,
-                            fontWeight = FontWeight.Bold
-                        )
-                        if (!isConnected) {
-                            TextButton(onClick = onConnectClick) {
-                                Text("Connect Now", color = NexusCyan, fontSize = 12.sp)
-                            }
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = if (isConnected) "Active SSH Session to ${server.hostname}" else "Disconnected",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    Text(
-                        text = "Uptime: $uptime",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontFamily = FontFamily.Monospace,
-                        color = Color(0xFF94A3B8)
-                    )
-                }
-            }
-        }
-
-        item {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = NexusCardNavy),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.dp, NexusBorderNavy, RoundedCornerShape(16.dp))
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "HARDWARE RESOURCES",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = FontFamily.Monospace,
-                        color = NexusCyan,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text("CPU Usage", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                            Text("${cpuUsage}%", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
-                        }
-                        Column {
-                            Text("RAM Usage", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                            Text(memUsage, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    LinearProgressIndicator(
-                        progress = { cpuUsage / 100f },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(6.dp),
-                        color = NexusCyan,
-                        trackColor = NexusBorderNavy
-                    )
-                }
-            }
-        }
-
-        item {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = NexusCardNavy),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.dp, NexusBorderNavy, RoundedCornerShape(16.dp))
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "STORAGE & HOST",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = FontFamily.Monospace,
-                        color = NexusEmerald,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    InfoRowItem("Root Disk (/)", diskUsage)
-                    InfoRowItem("Kernel", kernel)
-                    InfoRowItem("Hostname", server.hostname)
-                    InfoRowItem("Port", server.port.toString())
-                    InfoRowItem("User", server.username)
-                    InfoRowItem("Auth Type", server.authType.name)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun InfoRowItem(label: String, value: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(text = label, style = MaterialTheme.typography.bodySmall, color = Color(0xFF94A3B8))
-        Text(text = value, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace, color = Color.White)
-    }
-}
-
-@Composable
-fun RealTerminalScreen(
-    lines: List<String>,
-    isConnected: Boolean,
-    onExecuteCommand: (String) -> Unit
-) {
-    var input by remember { mutableStateOf("") }
-
+private fun EmptyServers(onAdd: () -> Unit) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF030712))
-            .padding(12.dp)
+        modifier = Modifier.fillMaxSize().padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            items(lines) { line ->
-                Text(
-                    text = line,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontFamily = FontFamily.Monospace,
-                    color = if (line.contains("Error") || line.contains("✗")) NexusRose else if (line.contains("✓")) NexusEmerald else Color(0xFFE2E8F0)
-                )
-            }
-        }
-
-        // Quick Command Keys Row
-        val quickKeys = listOf("uname -a", "uptime", "free -m", "df -h", "docker ps", "clear")
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(vertical = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            quickKeys.forEach { key ->
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = NexusCardNavy,
-                    modifier = Modifier.clickable {
-                        onExecuteCommand(key)
-                    }
-                ) {
-                    Text(
-                        text = key,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = FontFamily.Monospace,
-                        color = NexusCyan
-                    )
-                }
-            }
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            OutlinedTextField(
-                value = input,
-                onValueChange = { input = it },
-                modifier = Modifier.weight(1f),
-                placeholder = { Text("Type command to execute on server...", fontSize = 13.sp, color = Color.Gray) },
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = NexusCyan,
-                    unfocusedBorderColor = NexusBorderNavy,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White
-                )
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            IconButton(
-                onClick = {
-                    if (input.isNotBlank()) {
-                        onExecuteCommand(input.trim())
-                        input = ""
-                    }
-                },
-                modifier = Modifier
-                    .background(NexusCyan, RoundedCornerShape(12.dp))
-                    .size(48.dp)
-            ) {
-                Icon(Icons.Default.Send, contentDescription = "Send", tint = Color.Black)
-            }
-        }
-    }
-}
-
-@Composable
-fun RealFilesScreen(
-    isConnected: Boolean,
-    onRefresh: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("SFTP Remote File Explorer", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
-            IconButton(onClick = onRefresh) {
-                Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = NexusCyan)
-            }
-        }
-
-        if (!isConnected) {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = NexusCardNavy),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    "Connect to a server in the top bar to browse and edit remote files over SFTP.",
-                    color = Color.LightGray,
-                    modifier = Modifier.padding(16.dp),
-                    fontSize = 13.sp
-                )
-            }
-        } else {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = NexusCardNavy),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Directory: /", color = NexusCyan, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Tap Refresh icon to sync files from remote Linux filesystem.", color = Color.Gray, fontSize = 12.sp)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun RealDockerScreen(
-    isConnected: Boolean,
-    onRunDockerPs: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Docker Containers", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
-            IconButton(onClick = onRunDockerPs) {
-                Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = NexusCyan)
-            }
-        }
-
-        Card(
-            colors = CardDefaults.cardColors(containerColor = NexusCardNavy),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = if (isConnected) "Connected: Docker CLI ready via SSH" else "Connect to remote host to manage Docker containers.",
-                    color = Color.LightGray,
-                    fontSize = 13.sp
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun RealServicesScreen(
-    isConnected: Boolean,
-    onRestartSshd: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Systemd Services", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
-            IconButton(onClick = onRestartSshd) {
-                Icon(Icons.Default.Refresh, contentDescription = "Check", tint = NexusCyan)
-            }
-        }
-
-        Card(
-            colors = CardDefaults.cardColors(containerColor = NexusCardNavy),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = if (isConnected) "Connected: systemctl manager active" else "Connect to inspect systemd unit services.",
-                    color = Color.LightGray,
-                    fontSize = 13.sp
-                )
-            }
+        Icon(Icons.Default.Terminal, contentDescription = null, tint = NexusCyan, modifier = Modifier.size(48.dp))
+        Spacer(Modifier.height(16.dp))
+        Text("No servers yet", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(4.dp))
+        Text("Add a Linux server to connect over SSH.", color = NexusMuted)
+        Spacer(Modifier.height(16.dp))
+        Button(onClick = onAdd, colors = ButtonDefaults.buttonColors(containerColor = NexusCyan)) {
+            Text("Add server", color = Color.Black, fontWeight = FontWeight.Bold)
         }
     }
 }
