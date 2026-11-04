@@ -107,18 +107,11 @@ dependencies {
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
     implementation("androidx.biometric:biometric:1.2.0-alpha05")
 
-    // SSH Client - SSHJ (Supports Password, RSA, ED25519, SFTP, Port Forwarding)
+    // SSH Client - SSHJ (ED25519, RSA, SFTP, Port Forwarding)
     implementation("com.hierynomus:sshj:0.38.0")
-    // Cryptography Providers (BouncyCastle for ED25519 & modern ciphers)
     implementation("org.bouncycastle:bcprov-jdk18on:1.78.1")
     implementation("org.bouncycastle:bcpkix-jdk18on:1.78.1")
-
-    // Slf4j for Android logger bridge
     implementation("org.slf4j:slf4j-api:2.0.16")
-    implementation("com.github.tony19:logback-android:3.0.5")
-
-    // Terminal emulation helpers / ANSI parser
-    implementation("com.jcraft:jsch:0.1.55")
 
     // Testing
     testImplementation("junit:junit:4.13.2")
