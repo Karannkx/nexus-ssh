@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Nexus SSH</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_terminal">Terminal</string>
+    <string name="title_files">Files</string>
+    <string name="title_docker">Docker</string>
+    <string name="title_services">Services</string>
+</resources>
