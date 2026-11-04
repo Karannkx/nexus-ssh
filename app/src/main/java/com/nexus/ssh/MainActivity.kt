@@ -32,7 +32,6 @@ import com.nexus.ssh.core.database.ServerEntity
 import com.nexus.ssh.core.security.KeystoreManager
 import com.nexus.ssh.core.ssh.ConnectionState
 import com.nexus.ssh.core.ssh.SshConnectionManager
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 val NexusDarkNavy = Color(0xFF070A12)
@@ -63,7 +62,6 @@ fun NexusTheme(content: @Composable () -> Unit) {
     )
 }
 
-@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

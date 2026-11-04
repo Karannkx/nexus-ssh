@@ -1,11 +1,9 @@
 package com.nexus.ssh
 
 import android.app.Application
-import dagger.hilt.android.HiltAndroidApp
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.security.Security
 
-@HiltAndroidApp
 class NexusApplication : Application() {
     override fun onCreate() {
         super.onCreate()
