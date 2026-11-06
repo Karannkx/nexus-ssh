@@ -32,7 +32,23 @@ jobs:
           gradle-version: '8.10.2'
 
       - name: Build Debug APK
-        run: gradle :app:assembleDebug --no-daemon --stacktrace
+        run: |
+          set -o pipefail
+          gradle :app:assembleDebug --no-daemon --console=plain 2>&1 | tee build.log
+
+      # When the build fails, print only the real compiler errors (instead of a long stack trace)
+      - name: Show compiler errors
+        if: failure()
+        run: |
+          echo "## Build errors" >> "$GITHUB_STEP_SUMMARY"
+          grep -E "^e: |error:|What went wrong|Execution failed" -A2 build.log | head -120 | tee -a "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Upload build log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
