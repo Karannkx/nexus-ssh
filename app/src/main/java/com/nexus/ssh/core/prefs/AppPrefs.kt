@@ -4,6 +4,8 @@ import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
+data class WebBookmark(val serverId: Long, val label: String, val input: String)
+
 /** Small SharedPreferences wrapper that exposes every setting as a StateFlow. */
 class AppPrefs(context: Context) {
     private val sp = context.getSharedPreferences("nexus_prefs", Context.MODE_PRIVATE)
@@ -36,6 +38,15 @@ class AppPrefs(context: Context) {
     /** Custom favourite folders added by the user (absolute remote paths). */
     val favorites: StateFlow<List<String>> = _favorites
 
+    private val _tileOrder = MutableStateFlow(
+        (sp.getString("tile_order", "") ?: "").split(',').filter { it.isNotBlank() }
+    )
+    /** User-defined order of the Home quick-access tiles (route keys). */
+    val homeTileOrder: StateFlow<List<String>> = _tileOrder
+
+    private val _bookmarks = MutableStateFlow(loadBookmarks())
+    val webBookmarks: StateFlow<List<WebBookmark>> = _bookmarks
+
     private val _serverIcons = MutableStateFlow(loadIcons())
     val serverIcons: StateFlow<Map<Long, String>> = _serverIcons
 
@@ -47,6 +58,35 @@ class AppPrefs(context: Context) {
     fun setTerminalFontSize(v: Int) { sp.edit().putInt("term_font", v).apply(); _terminalFontSize.value = v }
     fun setRefreshSeconds(v: Int) { sp.edit().putInt("refresh_s", v).apply(); _refreshSeconds.value = v }
     fun setShowHiddenFiles(v: Boolean) { sp.edit().putBoolean("show_hidden", v).apply(); _showHidden.value = v }
+
+    fun setHomeTileOrder(keys: List<String>) {
+        sp.edit().putString("tile_order", keys.joinToString(",")).apply()
+        _tileOrder.value = keys
+    }
+
+    fun resetHomeTileOrder() = setHomeTileOrder(emptyList())
+
+    fun addBookmark(b: WebBookmark) {
+        if (_bookmarks.value.any { it.serverId == b.serverId && it.input == b.input }) return
+        saveBookmarks(_bookmarks.value + b)
+    }
+
+    fun removeBookmark(b: WebBookmark) {
+        saveBookmarks(_bookmarks.value.filterNot { it.serverId == b.serverId && it.input == b.input })
+    }
+
+    private fun saveBookmarks(list: List<WebBookmark>) {
+        val raw = list.joinToString("\n") { "${it.serverId}\u001f${it.label.replace('\n', ' ')}\u001f${it.input.replace('\n', ' ')}" }
+        sp.edit().putString("web_bookmarks", raw).apply()
+        _bookmarks.value = list
+    }
+
+    private fun loadBookmarks(): List<WebBookmark> =
+        (sp.getString("web_bookmarks", "") ?: "").split('\n').mapNotNull { line ->
+            val p = line.split('\u001f')
+            val id = p.getOrNull(0)?.toLongOrNull()
+            if (p.size == 3 && id != null) WebBookmark(id, p[1], p[2]) else null
+        }
 
     fun addFavorite(path: String) {
         if (path.isBlank() || path in _favorites.value) return

@@ -13,6 +13,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -52,7 +59,9 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -141,13 +150,18 @@ fun IconTile(icon: ImageVector, tint: Color, label: String, onClick: () -> Unit,
 }
 
 @Composable
-fun ScreenTopBar(title: String, onBack: (() -> Unit)?, actions: @Composable RowScope.() -> Unit = {}) {
+fun ScreenTopBar(
+    title: String,
+    onBack: (() -> Unit)?,
+    subtitle: String? = null,
+    actions: @Composable RowScope.() -> Unit = {}
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .statusBarsPadding()
             .padding(horizontal = 8.dp)
-            .height(60.dp),
+            .height(64.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (onBack != null) {
@@ -157,14 +171,12 @@ fun ScreenTopBar(title: String, onBack: (() -> Unit)?, actions: @Composable RowS
         } else {
             Spacer(Modifier.width(12.dp))
         }
-        Text(
-            title,
-            modifier = Modifier.weight(1f),
-            color = Color.White,
-            fontSize = 22.sp,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1
-        )
+        Column(Modifier.weight(1f)) {
+            Text(title, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+            if (!subtitle.isNullOrBlank()) {
+                Text(subtitle, color = Nx.Muted, fontSize = 13.sp, maxLines = 1)
+            }
+        }
         actions()
     }
 }
@@ -246,6 +258,26 @@ fun LoadingBar(visible: Boolean, modifier: Modifier = Modifier) {
 
 class NavItemSpec(val route: String, val icon: ImageVector, val label: String)
 
+@Composable
+private fun NavButton(item: NavItemSpec, selected: Boolean, onSelect: (NavItemSpec) -> Unit) {
+    val haptic = LocalHapticFeedback.current
+    val bg by animateColorAsState(if (selected) Color.White else Color.Transparent, label = "navBg")
+    val fg by animateColorAsState(if (selected) Color(0xFF0B0D12) else Nx.Muted, label = "navFg")
+    Box(
+        Modifier
+            .size(width = 58.dp, height = 52.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .background(bg)
+            .clickable(onClickLabel = item.label) {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                onSelect(item)
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(item.icon, contentDescription = item.label, tint = fg, modifier = Modifier.size(25.dp))
+    }
+}
+
 /** Rounded floating bottom navigation; the selected item is a white rounded square. */
 @Composable
 fun FloatingNavBar(
@@ -258,10 +290,12 @@ fun FloatingNavBar(
         modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 18.dp, vertical = 10.dp)
+            .padding(horizontal = 18.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center
     ) {
         Row(
             Modifier
+                .widthIn(max = 460.dp)
                 .fillMaxWidth()
                 .height(68.dp)
                 .shadow(18.dp, RoundedCornerShape(32.dp), ambientColor = Color.Black, spotColor = Color.Black)
@@ -270,21 +304,35 @@ fun FloatingNavBar(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            items.forEach { item ->
-                val selected = item.route == selectedRoute
-                val bg by animateColorAsState(if (selected) Color.White else Color.Transparent, label = "navBg")
-                val fg by animateColorAsState(if (selected) Color(0xFF0B0D12) else Nx.Muted, label = "navFg")
-                Box(
-                    Modifier
-                        .size(width = 58.dp, height = 52.dp)
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(bg)
-                        .clickable(onClickLabel = item.label) { onSelect(item) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(item.icon, contentDescription = item.label, tint = fg, modifier = Modifier.size(25.dp))
-                }
-            }
+            items.forEach { item -> NavButton(item, item.route == selectedRoute, onSelect) }
+        }
+    }
+}
+
+/** Vertical variant used on tablets and in landscape. */
+@Composable
+fun FloatingNavRail(
+    items: List<NavItemSpec>,
+    selectedRoute: String?,
+    onSelect: (NavItemSpec) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier
+            .fillMaxHeight()
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Vertical))
+            .padding(start = 12.dp, top = 12.dp, bottom = 12.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Column(
+            Modifier
+                .shadow(18.dp, RoundedCornerShape(30.dp), ambientColor = Color.Black, spotColor = Color.Black)
+                .glass(RoundedCornerShape(30.dp), fill = 0.9f)
+                .padding(vertical = 10.dp, horizontal = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            items.forEach { item -> NavButton(item, item.route == selectedRoute, onSelect) }
         }
     }
 }

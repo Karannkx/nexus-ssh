@@ -47,7 +47,8 @@ android {
             "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
             "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",
             "-opt-in=androidx.compose.ui.text.ExperimentalTextApi",
-            "-opt-in=androidx.compose.animation.ExperimentalAnimationApi"
+            "-opt-in=androidx.compose.animation.ExperimentalAnimationApi",
+            "-opt-in=androidx.compose.ui.ExperimentalComposeUiApi"
         )
     }
 
@@ -120,6 +121,10 @@ dependencies {
     // Android Keystore & Encrypted SharedPreferences
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
     implementation("androidx.biometric:biometric:1.2.0-alpha05")
+    // Biometric pulls in an old fragment whose FragmentActivity rejects ActivityResult request codes
+    // ("Can only use lower 16 bits for requestCode") and crashes every file picker. Pin a modern one.
+    implementation("androidx.fragment:fragment-ktx:1.8.5")
+    implementation("androidx.core:core-splashscreen:1.0.1")
 
     // SSH Client - SSHJ (Supports Password, RSA, ED25519, SFTP, Port Forwarding)
     implementation("com.hierynomus:sshj:0.38.0")

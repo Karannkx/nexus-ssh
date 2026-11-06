@@ -1,7 +1,5 @@
 package com.nexus.ssh.ui.screens
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -45,7 +43,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -73,6 +71,7 @@ import java.util.Locale
 fun ServerEditorDialog(
     initial: ServerEntity?,
     initialIconKey: String,
+    onPickKeyFile: ((String) -> Unit) -> Unit,
     onDismiss: () -> Unit,
     onSave: (
         name: String,
@@ -97,22 +96,7 @@ fun ServerEditorDialog(
     val accent = LocalAccent.current
     val editing = initial != null
 
-    val context = LocalContext.current
-    val keyPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
-            try {
-                val text = context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
-                if (text == null || text.length > 100_000) {
-                    error = "That doesn't look like a private key file"
-                } else {
-                    secret = text
-                    error = null
-                }
-            } catch (e: Exception) {
-                error = "Could not read key file: ${e.message}"
-            }
-        }
-    }
+    val clipboard = LocalClipboardManager.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -186,7 +170,16 @@ fun ServerEditorDialog(
                         minLines = 3, maxLines = 6, modifier = Modifier.fillMaxWidth(),
                         colors = nexusFieldColors(), shape = RoundedCornerShape(14.dp)
                     )
-                    TextButton(onClick = { keyPicker.launch(arrayOf("*/*")) }) { Text("Import key file…", color = accent) }
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        TextButton(onClick = {
+                            error = null
+                            onPickKeyFile { text -> secret = text }
+                        }) { Text("Import key file…", color = accent) }
+                        TextButton(onClick = {
+                            val pasted = clipboard.getText()?.text.orEmpty()
+                            if (pasted.isBlank()) error = "The clipboard is empty" else { secret = pasted; error = null }
+                        }) { Text("Paste", color = accent) }
+                    }
                     OutlinedTextField(
                         value = passphrase, onValueChange = { passphrase = it },
                         label = { Text("Key passphrase (if any)") }, singleLine = true,

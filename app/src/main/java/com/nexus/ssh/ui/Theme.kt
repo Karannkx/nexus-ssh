@@ -24,6 +24,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -110,7 +112,10 @@ fun NexusTheme(accent: Color = Nx.Blue, content: @Composable () -> Unit) {
         outlineVariant = Color(0x1FFFFFFF),
         error = Nx.Red
     )
-    CompositionLocalProvider(LocalAccent provides accent) {
+    val base = LocalDensity.current
+    // Keep text scalable for accessibility but stop very large font settings from breaking layouts
+    val density = Density(base.density, fontScale = base.fontScale.coerceAtMost(1.15f))
+    CompositionLocalProvider(LocalAccent provides accent, LocalDensity provides density) {
         MaterialTheme(
             colorScheme = scheme,
             typography = Typography().withFont(InterFamily),

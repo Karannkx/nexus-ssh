@@ -52,6 +52,7 @@ import com.nexus.ssh.ui.nexusFieldColors
 @Composable
 fun LogsScreen(
     connected: Boolean,
+    serverName: String,
     state: LogsState,
     onBack: () -> Unit,
     onConnect: () -> Unit,
@@ -76,7 +77,7 @@ fun LogsScreen(
     }
 
     Column(Modifier.fillMaxSize()) {
-        ScreenTopBar("Logs", onBack) {
+        ScreenTopBar("Logs", onBack, subtitle = serverName.ifBlank { null }) {
             IconButton(
                 onClick = { if (state.source != null) onLoadSource(state.source) else onLoadFile(path) },
                 enabled = connected

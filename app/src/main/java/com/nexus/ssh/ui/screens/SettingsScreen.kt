@@ -3,19 +3,19 @@ package com.nexus.ssh.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,8 +23,19 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Fingerprint
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.RestartAlt
+import androidx.compose.material.icons.rounded.Security
+import androidx.compose.material.icons.rounded.Speed
+import androidx.compose.material.icons.rounded.TextFields
+import androidx.compose.material.icons.rounded.Wallpaper
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -45,6 +56,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -56,42 +68,36 @@ import com.nexus.ssh.ui.LocalAccent
 import com.nexus.ssh.ui.Nx
 import com.nexus.ssh.ui.accentColor
 import com.nexus.ssh.ui.components.DialogShape
-import com.nexus.ssh.ui.components.GlassCard
-import com.nexus.ssh.ui.components.SectionLabel
+import com.nexus.ssh.ui.components.GroupSurface
+import com.nexus.ssh.ui.components.IconBadge
+import com.nexus.ssh.ui.components.ListRow
+import com.nexus.ssh.ui.components.RowDivider
+import com.nexus.ssh.ui.components.SectionHeader
 import com.nexus.ssh.ui.nexusFieldColors
 import com.nexus.ssh.ui.serverIconSpec
 
 @Composable
-private fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Column(Modifier.fillMaxWidth().padding(top = 18.dp)) {
-        SectionLabel(title, Modifier.padding(start = 6.dp, bottom = 8.dp))
-        GlassCard(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
-            Column(Modifier.padding(16.dp), content = content)
-        }
-    }
-}
-
-@Composable
-private fun ToggleRow(title: String, subtitle: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+private fun SwitchRow(icon: ImageVector, tint: Color, title: String, subtitle: String, checked: Boolean, onChange: (Boolean) -> Unit) {
     val accent = LocalAccent.current
-    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text(title, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-            Text(subtitle, color = Nx.Muted, fontSize = 12.sp)
-        }
-        Spacer(Modifier.width(12.dp))
-        Switch(
-            checked = checked,
-            onCheckedChange = onChange,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
-                checkedTrackColor = accent,
-                uncheckedThumbColor = Nx.Muted,
-                uncheckedTrackColor = Color.White.copy(alpha = 0.10f),
-                uncheckedBorderColor = Color.White.copy(alpha = 0.18f)
+    ListRow(
+        title = title,
+        subtitle = subtitle,
+        leading = { IconBadge(icon, tint) },
+        trailing = {
+            Switch(
+                checked = checked,
+                onCheckedChange = onChange,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color.White,
+                    checkedTrackColor = accent,
+                    uncheckedThumbColor = Nx.Muted,
+                    uncheckedTrackColor = Color.White.copy(alpha = 0.10f),
+                    uncheckedBorderColor = Color.White.copy(alpha = 0.18f)
+                )
             )
-        )
-    }
+        },
+        onClick = { onChange(!checked) }
+    )
 }
 
 @Composable
@@ -123,141 +129,167 @@ fun SettingsScreen(
             .statusBarsPadding()
             .padding(horizontal = 18.dp)
     ) {
-        Text("Settings", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 6.dp, top = 22.dp))
+        Text("Settings", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 8.dp, top = 22.dp))
 
-        SettingsSection("Profile") {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { prefs.setDisplayName(it.take(24)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                label = { Text("Display name") },
-                supportingText = { Text("Shown in the greeting on the home screen", color = Nx.Muted) },
-                shape = RoundedCornerShape(14.dp),
-                colors = nexusFieldColors()
-            )
+        SectionHeader("Profile")
+        GroupSurface {
+            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                IconBadge(Icons.Rounded.Person, Nx.Blue)
+                Spacer(Modifier.size(14.dp))
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { prefs.setDisplayName(it.take(24)) },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    label = { Text("Display name") },
+                    shape = RoundedCornerShape(14.dp),
+                    colors = nexusFieldColors()
+                )
+            }
         }
 
-        SettingsSection("Appearance") {
-            ToggleRow("Wallpaper", "Show the flowing wave wallpaper on Home, Servers and Apps", wallpaper) { prefs.setShowWallpaper(it) }
-            Spacer(Modifier.height(8.dp))
-            Text("Accent colour", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-            Spacer(Modifier.height(10.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                AccentOptions.forEach { key ->
-                    val c = accentColor(key)
-                    Box(
-                        Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(c)
-                            .border(if (key == accentKey) 3.dp else 1.dp, if (key == accentKey) Color.White else Color.White.copy(alpha = 0.25f), CircleShape)
-                            .clickable(onClickLabel = key) { prefs.setAccent(key) },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (key == accentKey) Icon(Icons.Rounded.Check, contentDescription = "Selected", tint = Color.Black, modifier = Modifier.size(20.dp))
+        SectionHeader("Appearance")
+        GroupSurface {
+            SwitchRow(Icons.Rounded.Wallpaper, Nx.Purple, "Wallpaper", "Wave background on Home, Servers and Apps", wallpaper) { prefs.setShowWallpaper(it) }
+            RowDivider()
+            Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                IconBadge(Icons.Rounded.Palette, Nx.Magenta)
+                Spacer(Modifier.size(14.dp))
+                Text("Accent colour", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    AccentOptions.forEach { key ->
+                        val c = accentColor(key)
+                        Box(
+                            Modifier
+                                .size(30.dp)
+                                .clip(CircleShape)
+                                .background(c)
+                                .border(if (key == accentKey) 2.5.dp else 0.dp, Color.White, CircleShape)
+                                .clickable(onClickLabel = key) { prefs.setAccent(key) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (key == accentKey) Icon(Icons.Rounded.Check, contentDescription = "Selected", tint = Color.Black, modifier = Modifier.size(16.dp))
+                        }
                     }
                 }
             }
-            Spacer(Modifier.height(16.dp))
-            Text("Terminal font size: $fontSize sp", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-            Slider(
-                value = fontSize.toFloat(),
-                onValueChange = { prefs.setTerminalFontSize(it.toInt()) },
-                valueRange = 10f..18f,
-                steps = 7,
-                colors = SliderDefaults.colors(thumbColor = accent, activeTrackColor = accent, inactiveTrackColor = Color.White.copy(alpha = 0.12f))
-            )
-            Text("Monitor refresh interval", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-            Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf(3, 5, 10, 30).forEach { s ->
-                    Text(
-                        "${s}s",
-                        color = if (refresh == s) Color(0xFF0B0D12) else Nx.Muted,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 13.sp,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(if (refresh == s) Color.White else Color.White.copy(alpha = 0.08f))
-                            .clickable { prefs.setRefreshSeconds(s) }
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
+            RowDivider()
+            Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconBadge(Icons.Rounded.TextFields, Nx.Cyan)
+                    Spacer(Modifier.size(14.dp))
+                    Text("Terminal font size", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+                    Text("$fontSize sp", color = Nx.Muted, fontSize = 14.sp)
+                }
+                Slider(
+                    value = fontSize.toFloat(),
+                    onValueChange = { prefs.setTerminalFontSize(it.toInt()) },
+                    valueRange = 10f..18f,
+                    steps = 7,
+                    colors = SliderDefaults.colors(thumbColor = accent, activeTrackColor = accent, inactiveTrackColor = Color.White.copy(alpha = 0.12f))
+                )
+            }
+            RowDivider()
+            Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconBadge(Icons.Rounded.Speed, Nx.Green)
+                    Spacer(Modifier.size(14.dp))
+                    Text("Monitor refresh", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+                }
+                Spacer(Modifier.height(12.dp))
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(3, 5, 10, 30).forEach { s ->
+                        Text(
+                            "$s s",
+                            color = if (refresh == s) Color(0xFF0B0D12) else Nx.Muted,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 14.sp,
+                            modifier = Modifier
+                                .heightIn(min = 38.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(if (refresh == s) Color.White else Color.White.copy(alpha = 0.08f))
+                                .clickable { prefs.setRefreshSeconds(s) }
+                                .padding(horizontal = 18.dp, vertical = 9.dp)
+                        )
+                    }
                 }
             }
+            RowDivider()
+            ListRow(
+                title = "Reset home layout",
+                subtitle = "Put the home icons back in their default order",
+                leading = { IconBadge(Icons.Rounded.RestartAlt, Nx.Amber) },
+                onClick = { prefs.resetHomeTileOrder() }
+            )
         }
 
-        SettingsSection("Servers") {
-            if (servers.isEmpty()) {
-                Text("No servers saved yet.", color = Nx.Muted, fontSize = 14.sp)
-            }
+        SectionHeader("Servers")
+        GroupSurface {
             servers.forEach { s ->
                 val spec = serverIconSpec(icons[s.id])
-                Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(spec.icon, contentDescription = null, tint = spec.tint, modifier = Modifier.size(24.dp))
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(s.name, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 1)
-                        Text("${s.username}@${s.hostname}:${s.port}", color = Nx.Muted, fontSize = 12.sp, maxLines = 1)
+                ListRow(
+                    title = s.name,
+                    subtitle = "${s.username}@${s.hostname}:${s.port}",
+                    leading = { IconBadge(spec.icon, spec.tint) },
+                    trailing = {
+                        Row {
+                            IconButton(onClick = { onEditServer(s) }) { Icon(Icons.Rounded.Edit, "Edit", tint = Nx.Muted) }
+                            IconButton(onClick = { onDeleteServer(s) }) { Icon(Icons.Rounded.Delete, "Delete", tint = Nx.Red) }
+                        }
                     }
-                    IconButton(onClick = { onEditServer(s) }) { Icon(Icons.Rounded.Edit, "Edit", tint = Nx.Muted) }
-                    IconButton(onClick = { onDeleteServer(s) }) { Icon(Icons.Rounded.Delete, "Delete", tint = Nx.Red) }
-                }
+                )
+                RowDivider()
             }
-            Spacer(Modifier.height(8.dp))
-            Row(
-                Modifier
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(accent.copy(alpha = 0.16f))
-                    .clickable(onClick = onAddServer)
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Rounded.Add, contentDescription = null, tint = accent, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Add server", color = accent, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-            }
-        }
-
-        SettingsSection("Security") {
-            ToggleRow("App lock", "Require fingerprint, face or device PIN when opening the app", appLock, onToggleAppLock)
-            ToggleRow("Protect screen", "Block screenshots and hide content in the recent apps list", secure) { prefs.setSecureScreen(it) }
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "Passwords, private keys and passphrases are encrypted with a hardware-backed Android Keystore key (AES-256-GCM).",
-                color = Nx.Muted,
-                fontSize = 12.sp
-            )
-            Spacer(Modifier.height(10.dp))
-            Text(
-                "Forget all trusted host keys",
-                color = Nx.Red,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 14.sp,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable { confirmClear = true }
-                    .padding(vertical = 8.dp)
+            ListRow(
+                title = "Add server",
+                titleColor = accent,
+                leading = { IconBadge(Icons.Rounded.Add, accent) },
+                onClick = onAddServer
             )
         }
 
-        SettingsSection("About") {
-            AboutRow("Version", BuildConfig.VERSION_NAME)
-            AboutRow("License", "MIT")
-            AboutRow("Built with", "Kotlin · Jetpack Compose · SSHJ · Room")
-            AboutRow("Typeface", "Inter (SIL Open Font License)")
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "Source code on GitHub",
-                color = accent,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 14.sp,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable { onOpenUrl("https://github.com/Karannkx/nexus-ssh") }
-                    .padding(vertical = 8.dp)
+        SectionHeader("Security")
+        GroupSurface {
+            SwitchRow(Icons.Rounded.Fingerprint, Nx.Green, "App lock", "Ask for fingerprint, face or PIN when opening the app", appLock, onToggleAppLock)
+            RowDivider()
+            SwitchRow(Icons.Rounded.Lock, Nx.Blue, "Protect screen", "Block screenshots and hide the app in recents", secure) { prefs.setSecureScreen(it) }
+            RowDivider()
+            ListRow(
+                title = "Forget trusted host keys",
+                titleColor = Nx.Red,
+                subtitle = "You will verify each server's fingerprint again",
+                leading = { IconBadge(Icons.Rounded.Security, Nx.Red) },
+                onClick = { confirmClear = true }
             )
         }
+        Text(
+            "Passwords, private keys and passphrases are encrypted with a hardware-backed Android Keystore key (AES-256-GCM).",
+            color = Nx.Muted,
+            fontSize = 12.sp,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
+        )
+
+        SectionHeader("About")
+        GroupSurface {
+            ListRow(
+                title = "Nexus SSH",
+                subtitle = "Version ${BuildConfig.VERSION_NAME} · MIT licence",
+                leading = { IconBadge(Icons.Rounded.Info, Nx.Cyan) }
+            )
+            RowDivider()
+            ListRow(
+                title = "Source code on GitHub",
+                subtitle = "github.com/Karannkx/nexus-ssh",
+                trailing = { Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = Nx.Faint) },
+                onClick = { onOpenUrl("https://github.com/Karannkx/nexus-ssh") }
+            )
+        }
+        Text(
+            "Built with Kotlin, Jetpack Compose, SSHJ and Room. Typeface: Inter (SIL Open Font License).",
+            color = Nx.Muted,
+            fontSize = 12.sp,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
+        )
         Spacer(Modifier.height(24.dp))
     }
 
@@ -271,14 +303,5 @@ fun SettingsScreen(
             confirmButton = { TextButton(onClick = { onClearHostKeys(); confirmClear = false }) { Text("Forget", color = Nx.Red) } },
             dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Cancel", color = Nx.Muted) } }
         )
-    }
-}
-
-@Composable
-private fun AboutRow(label: String, value: String) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 5.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, color = Nx.Muted, fontSize = 13.sp)
-        Spacer(Modifier.width(12.dp))
-        Text(value, color = Color.White, fontSize = 13.sp, modifier = Modifier.weight(1f, fill = false))
     }
 }

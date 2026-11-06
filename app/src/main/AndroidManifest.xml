@@ -20,11 +20,12 @@
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="false"
-        android:icon="@drawable/ic_nexus_logo"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:label="Nexus SSH"
         android:supportsRtl="true"
         android:theme="@style/Theme.NexusSSH"
-        android:usesCleartextTraffic="true"
         tools:targetApi="35">
 
         <activity
@@ -32,7 +33,7 @@
             android:exported="true"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
             android:windowSoftInputMode="adjustResize"
-            android:theme="@style/Theme.NexusSSH">
+            android:theme="@style/Theme.NexusSSH.Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

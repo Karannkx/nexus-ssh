@@ -32,11 +32,13 @@
 | 🔑 | **Password & private-key auth** | RSA / ED25519 / ECDSA keys (OpenSSH or PEM), optional passphrase, import key from a file |
 | 🛡️ | **Hardware-backed encryption** | Credentials encrypted with AES-256-GCM via Android Keystore, never stored in plaintext |
 | 🔍 | **Host-key verification (TOFU)** | Shows the real `SHA256:` fingerprint on first connect, pins it, and **refuses** a changed key |
-| ⌨️ | **Interactive terminal** | Real PTY shell with **multiple tabs**, ESC / TAB / Ctrl-C / Ctrl-D / Ctrl-Z / arrow keys |
+| ⌨️ | **Interactive terminal** | Real PTY shell, type directly like a normal terminal, **multiple tabs**, sticky CTRL / ALT, key bar pinned above the keyboard, copy / paste |
 | 📁 | **SFTP file manager** | Grid / list view, breadcrumbs, search, upload, download, create, edit text files, delete |
 | 📊 | **System monitor** | Live CPU, memory, disk and network charts from real samples, selectable time range, tap-to-inspect |
 | 🐳 | **Docker manager** | Container list, start / stop / restart, details and logs |
 | ⚙️ | **systemd services** | Search, filter (running / stopped / failed), start / stop / restart with confirmation |
+| 🌐 | **Built-in browser** | Open any web app installed on the server (Portainer, Grafana, Jellyfin, Jupyter…) through a secure SSH tunnel, detected ports, bookmarks, "Open in browser" for Docker ports |
+| 🧩 | **Launcher home** | Android-style icon grid: touch and hold an icon, drag it, drop it to rearrange |
 | 📜 | **Log viewer** | journald / syslog, kernel, SSH and any custom log file with live filtering |
 | 🔒 | **App lock** | Optional biometric / device-credential lock and screenshot protection |
 | 🎨 | **Theming** | Glass UI with wallpaper toggle and accent colours, adjustable terminal font size and refresh rate |

@@ -1,6 +1,8 @@
 package com.nexus.ssh.ui.screens
 
 import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -56,6 +58,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.PullToRefreshBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -70,6 +73,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -86,7 +90,9 @@ import com.nexus.ssh.ui.GridIcon
 import com.nexus.ssh.ui.ListIcon
 import com.nexus.ssh.ui.LocalAccent
 import com.nexus.ssh.ui.Nx
+import com.nexus.ssh.ui.components.ActionSheet
 import com.nexus.ssh.ui.components.BigFileIcon
+import com.nexus.ssh.ui.components.SheetAction
 import com.nexus.ssh.ui.components.BigFolderIcon
 import com.nexus.ssh.ui.components.DialogShape
 import com.nexus.ssh.ui.components.EmptyState
@@ -145,7 +151,8 @@ fun FilesScreen(
     val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US) }
     val accent = LocalAccent.current
 
-    val uploadPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+    val context = LocalContext.current
+    val uploadPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) onUpload(uri)
     }
     val downloadPicker = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("*/*")) { uri ->
@@ -153,6 +160,23 @@ fun FilesScreen(
         if (uri != null && item != null) onDownload(item, uri)
         pendingDownload = null
     }
+    fun launchUpload() {
+        try {
+            uploadPicker.launch("*/*")
+        } catch (e: Exception) {
+            Toast.makeText(context, "No file manager found on this device", Toast.LENGTH_LONG).show()
+        }
+    }
+    fun launchDownload(item: RemoteFileItem) {
+        pendingDownload = item
+        try {
+            downloadPicker.launch(item.name)
+        } catch (e: Exception) {
+            pendingDownload = null
+            Toast.makeText(context, "No file manager found on this device", Toast.LENGTH_LONG).show()
+        }
+    }
+    BackHandler(enabled = connected && state.path.isNotEmpty() && state.path != "/") { onUp() }
 
     val visible = remember(state.entries, query, showHidden) {
         state.entries.filter { (showHidden || !it.name.startsWith(".")) && it.name.contains(query.trim(), ignoreCase = true) }
@@ -186,32 +210,8 @@ fun FilesScreen(
                 IconButton(onClick = { searching = !searching; if (!searching) query = "" }) {
                     Icon(Icons.Rounded.Search, contentDescription = "Search", tint = Color.White)
                 }
-                Box {
-                    IconButton(onClick = { overflow = true }) {
-                        Icon(Icons.Rounded.MoreVert, contentDescription = "More", tint = Color.White)
-                    }
-                    DropdownMenu(expanded = overflow, onDismissRequest = { overflow = false }) {
-                        DropdownMenuItem(
-                            text = { Text("Refresh") },
-                            leadingIcon = { Icon(Icons.Rounded.Refresh, null) },
-                            onClick = { overflow = false; onRefresh() }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Parent folder") },
-                            leadingIcon = { Icon(Icons.Rounded.ArrowUpward, null) },
-                            onClick = { overflow = false; onUp() }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(if (showHidden) "Hide hidden files" else "Show hidden files") },
-                            leadingIcon = { Icon(if (showHidden) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility, null) },
-                            onClick = { overflow = false; onToggleHidden() }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Add folder to favorites") },
-                            leadingIcon = { Icon(Icons.Rounded.Star, null) },
-                            onClick = { overflow = false; if (state.path.isNotEmpty()) onAddFavorite(state.path) }
-                        )
-                    }
+                IconButton(onClick = { overflow = true }) {
+                    Icon(Icons.Rounded.MoreVert, contentDescription = "More", tint = Color.White)
                 }
             }
 
@@ -287,7 +287,7 @@ fun FilesScreen(
                 transfer?.let { Text(it, color = accent, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 20.dp)) }
                 state.error?.let { ErrorBox(it, Modifier.padding(16.dp), onRefresh) }
 
-                Box(Modifier.weight(1f).fillMaxWidth()) {
+                PullToRefreshBox(isRefreshing = state.loading, onRefresh = onRefresh, modifier = Modifier.weight(1f).fillMaxWidth()) {
                     if (visible.isEmpty() && !state.loading && state.error == null) {
                         EmptyState(Icons.Rounded.FolderOpen, "Nothing here", if (query.isNotBlank()) "No files match your search." else "This folder is empty.")
                     } else if (gridMode) {
@@ -357,34 +357,17 @@ fun FilesScreen(
                     )
 
                     // floating add button
-                    Box(Modifier.align(Alignment.BottomEnd).padding(end = 18.dp, bottom = 12.dp)) {
-                        Box(
-                            Modifier
-                                .size(58.dp)
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(Color.White)
-                                .clickable(onClickLabel = "Add") { fabMenu = true },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Rounded.Add, contentDescription = "Add", tint = Color(0xFF0B0D12), modifier = Modifier.size(30.dp))
-                        }
-                        DropdownMenu(expanded = fabMenu, onDismissRequest = { fabMenu = false }) {
-                            DropdownMenuItem(
-                                text = { Text("Upload file") },
-                                leadingIcon = { Icon(Icons.Rounded.FileUpload, null) },
-                                onClick = { fabMenu = false; uploadPicker.launch(arrayOf("*/*")) }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("New folder") },
-                                leadingIcon = { Icon(Icons.Rounded.CreateNewFolder, null) },
-                                onClick = { fabMenu = false; showMkdir = true }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("New text file") },
-                                leadingIcon = { Icon(Icons.Rounded.NoteAdd, null) },
-                                onClick = { fabMenu = false; showNewFile = true }
-                            )
-                        }
+                    Box(
+                        Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(end = 18.dp, bottom = 12.dp)
+                            .size(60.dp)
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(Color.White)
+                            .clickable(onClickLabel = "Add") { fabMenu = true },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Rounded.Add, contentDescription = "Add", tint = Color(0xFF0B0D12), modifier = Modifier.size(30.dp))
                     }
                 }
             }
@@ -394,28 +377,42 @@ fun FilesScreen(
     if (showMkdir) NameDialog("New folder", "Folder name", { showMkdir = false }) { onMkdir(it); showMkdir = false }
     if (showNewFile) NameDialog("New text file", "File name", { showNewFile = false }) { onCreateFile(it); showNewFile = false }
 
+    if (overflow) {
+        ActionSheet(
+            title = state.path.ifEmpty { "Files" },
+            actions = listOf(
+                SheetAction("Refresh", Icons.Rounded.Refresh) { onRefresh() },
+                SheetAction("Parent folder", Icons.Rounded.ArrowUpward) { onUp() },
+                SheetAction(if (showHidden) "Hide hidden files" else "Show hidden files", if (showHidden) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility) { onToggleHidden() },
+                SheetAction("Add folder to favorites", Icons.Rounded.Star) { if (state.path.isNotEmpty()) onAddFavorite(state.path) }
+            ),
+            onDismiss = { overflow = false }
+        )
+    }
+    if (fabMenu) {
+        ActionSheet(
+            title = "Add to ${state.path.ifEmpty { "folder" }}",
+            actions = listOf(
+                SheetAction("Upload file", Icons.Rounded.FileUpload) { launchUpload() },
+                SheetAction("New folder", Icons.Rounded.CreateNewFolder) { showMkdir = true },
+                SheetAction("New text file", Icons.Rounded.NoteAdd) { showNewFile = true }
+            ),
+            onDismiss = { fabMenu = false }
+        )
+    }
+
     actionsFor?.let { item ->
-        ModalBottomSheet(onDismissRequest = { actionsFor = null }, containerColor = Nx.SurfaceHigh) {
-            Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 28.dp).navigationBarsPadding()) {
-                Text(item.name, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(
-                    item.permissions + if (item.isDirectory) "" else "  ·  " + humanSize(item.size),
-                    color = Nx.Muted,
-                    fontSize = 12.sp,
-                    fontFamily = FontFamily.Monospace
-                )
-                Spacer(Modifier.height(10.dp))
-                SheetAction(Icons.Rounded.FolderOpen, if (item.isDirectory) "Open folder" else "Open / edit as text") { actionsFor = null; onOpenItem(item) }
-                if (!item.isDirectory) {
-                    SheetAction(Icons.Rounded.FileDownload, "Download") {
-                        actionsFor = null
-                        pendingDownload = item
-                        downloadPicker.launch(item.name)
-                    }
-                }
-                SheetAction(Icons.Rounded.Delete, "Delete", Nx.Red) { actionsFor = null; deleteTarget = item }
-            }
+        val actions = buildList {
+            add(SheetAction(if (item.isDirectory) "Open folder" else "Open / edit as text", Icons.Rounded.FolderOpen) { onOpenItem(item) })
+            if (!item.isDirectory) add(SheetAction("Download", Icons.Rounded.FileDownload) { launchDownload(item) })
+            add(SheetAction("Delete", Icons.Rounded.Delete, Nx.Red) { deleteTarget = item })
         }
+        ActionSheet(
+            title = item.name,
+            subtitle = item.permissions + if (item.isDirectory) "" else "  ·  " + humanSize(item.size),
+            actions = actions,
+            onDismiss = { actionsFor = null }
+        )
     }
 
     deleteTarget?.let { target ->
@@ -437,18 +434,6 @@ fun FilesScreen(
     }
 
     if (openFile != null) FileEditorDialog(openFile, onSaveFile, onCloseFile)
-}
-
-@Composable
-private fun SheetAction(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, tint: Color = Color.White, onClick: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable(onClick = onClick).padding(horizontal = 6.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(icon, contentDescription = null, tint = tint)
-        Spacer(Modifier.width(16.dp))
-        Text(label, color = tint, fontSize = 16.sp)
-    }
 }
 
 @Composable

@@ -11,4 +11,5 @@ object Routes {
     const val TERMINAL = "terminal"
     const val SERVICES = "services"
     const val LOGS = "logs"
+    const val BROWSER = "browser"
 }

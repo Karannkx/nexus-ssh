@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -53,7 +54,9 @@ import com.nexus.ssh.core.ssh.ConnectionState
 import com.nexus.ssh.core.ssh.Telemetry
 import com.nexus.ssh.ui.LocalAccent
 import com.nexus.ssh.ui.Nx
+import com.nexus.ssh.ui.components.ActionSheet
 import com.nexus.ssh.ui.components.ChartSeries
+import com.nexus.ssh.ui.components.SheetAction
 import com.nexus.ssh.ui.components.EmptyState
 import com.nexus.ssh.ui.components.LineChart
 import com.nexus.ssh.ui.components.PrimaryButton
@@ -84,21 +87,17 @@ private fun niceMax(v: Float): Float {
 }
 
 @Composable
-private fun DropPill(label: String, modifier: Modifier = Modifier, menu: @Composable (close: () -> Unit) -> Unit) {
-    var open by remember { mutableStateOf(false) }
-    Box(modifier) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .glass(RoundedCornerShape(16.dp), fill = 0.85f)
-                .clickable { open = true }
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(label, color = Color.White, fontSize = 14.sp, modifier = Modifier.weight(1f), maxLines = 1)
-            Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null, tint = Color.White)
-        }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) { menu { open = false } }
+private fun DropPill(label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Row(
+        modifier
+            .fillMaxWidth()
+            .glass(RoundedCornerShape(16.dp), fill = 0.85f)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 15.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(label, color = Color.White, fontSize = 14.sp, modifier = Modifier.weight(1f), maxLines = 1)
+        Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null, tint = Color.White)
     }
 }
 
@@ -152,6 +151,8 @@ fun MonitorScreen(
     val connected = connection is ConnectionState.Connected
     var rangeIdx by rememberSaveable { mutableIntStateOf(0) }
     var metric by rememberSaveable { mutableIntStateOf(0) }
+    var serverSheet by remember { mutableStateOf(false) }
+    var rangeSheet by remember { mutableStateOf(false) }
     val accent = LocalAccent.current
 
     val lastT = samples.lastOrNull()?.t ?: 0L
@@ -165,20 +166,8 @@ fun MonitorScreen(
         }
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                DropPill(
-                    label = activeServer?.name ?: "No servers",
-                    modifier = Modifier.weight(1f)
-                ) { close ->
-                    servers.forEach { s ->
-                        DropdownMenuItem(
-                            text = { Text(s.name + if ((connection as? ConnectionState.Connected)?.server?.id == s.id) "  ●" else "") },
-                            onClick = { close(); onPickServer(s) }
-                        )
-                    }
-                }
-                DropPill(label = RANGES[rangeIdx].label, modifier = Modifier.weight(1f)) { close ->
-                    RANGES.forEachIndexed { i, r -> DropdownMenuItem(text = { Text(r.label) }, onClick = { close(); rangeIdx = i }) }
-                }
+                DropPill(label = activeServer?.name ?: "No servers", modifier = Modifier.weight(1f)) { serverSheet = true }
+                DropPill(label = RANGES[rangeIdx].label, modifier = Modifier.weight(1f)) { rangeSheet = true }
             }
             Spacer(Modifier.height(14.dp))
 
@@ -201,36 +190,59 @@ fun MonitorScreen(
                 val diskSpark = windowed.map { it.disk }
                 val netSpark = windowed.map { it.rxBps }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    MetricCard(
-                        Icons.Rounded.Cloud, "Servers", "1 / ${servers.size}", Nx.Green,
-                        Modifier.weight(1f), sub = "Online"
-                    )
-                    MetricCard(
-                        Icons.Rounded.Speed, "CPU",
-                        if (t != null) String.format(Locale.US, "%.1f%%", t.cpuPercent) else "—",
-                        Nx.Green, Modifier.weight(1f), spark = cpuSpark, sparkMax = 100f
-                    )
-                    MetricCard(
-                        Icons.Rounded.Memory, "Memory",
-                        if (memPct != null) String.format(Locale.US, "%.1f%%", memPct) else "—",
-                        Nx.Purple, Modifier.weight(1f), spark = memSpark, sparkMax = 100f
-                    )
-                }
-                Spacer(Modifier.height(12.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    MetricCard(
-                        Icons.Rounded.Storage, "Disk",
-                        if (diskPct != null) String.format(Locale.US, "%.1f%%", diskPct) else "—",
-                        Nx.Blue, Modifier.weight(1f), spark = diskSpark, sparkMax = 100f
-                    )
-                    MetricCard(
-                        Icons.Rounded.Wifi, "Network",
-                        if (t != null) "↓ " + formatRate(t.rxBytesPerSec) else "—",
-                        Nx.Magenta, Modifier.weight(1.4f),
-                        sub = if (t != null) "↑ " + formatRate(t.txBytesPerSec) else null,
-                        spark = netSpark
-                    )
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    val compact = maxWidth < 440.dp
+                    val serversCard: @Composable (Modifier) -> Unit = { m ->
+                        MetricCard(Icons.Rounded.Cloud, "Servers", "1 / ${servers.size}", Nx.Green, m, sub = "Online")
+                    }
+                    val cpuCard: @Composable (Modifier) -> Unit = { m ->
+                        MetricCard(
+                            Icons.Rounded.Speed, "CPU",
+                            if (t != null) String.format(Locale.US, "%.1f%%", t.cpuPercent) else "—",
+                            Nx.Green, m, spark = cpuSpark, sparkMax = 100f
+                        )
+                    }
+                    val memCard: @Composable (Modifier) -> Unit = { m ->
+                        MetricCard(
+                            Icons.Rounded.Memory, "Memory",
+                            if (memPct != null) String.format(Locale.US, "%.1f%%", memPct) else "—",
+                            Nx.Purple, m, spark = memSpark, sparkMax = 100f
+                        )
+                    }
+                    val diskCard: @Composable (Modifier) -> Unit = { m ->
+                        MetricCard(
+                            Icons.Rounded.Storage, "Disk",
+                            if (diskPct != null) String.format(Locale.US, "%.1f%%", diskPct) else "—",
+                            Nx.Blue, m, spark = diskSpark, sparkMax = 100f
+                        )
+                    }
+                    val netCard: @Composable (Modifier) -> Unit = { m ->
+                        MetricCard(
+                            Icons.Rounded.Wifi, "Network",
+                            if (t != null) "↓ " + formatRate(t.rxBytesPerSec) else "—",
+                            Nx.Magenta, m,
+                            sub = if (t != null) "↑ " + formatRate(t.txBytesPerSec) else null,
+                            spark = netSpark
+                        )
+                    }
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        if (compact) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                serversCard(Modifier.weight(1f)); cpuCard(Modifier.weight(1f))
+                            }
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                memCard(Modifier.weight(1f)); diskCard(Modifier.weight(1f))
+                            }
+                            netCard(Modifier.fillMaxWidth())
+                        } else {
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                serversCard(Modifier.weight(1f)); cpuCard(Modifier.weight(1f)); memCard(Modifier.weight(1f))
+                            }
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                diskCard(Modifier.weight(1f)); netCard(Modifier.weight(1.4f))
+                            }
+                        }
+                    }
                 }
 
                 Spacer(Modifier.height(14.dp))
@@ -311,6 +323,28 @@ fun MonitorScreen(
             }
             Spacer(Modifier.height(24.dp))
         }
+    }
+
+    if (serverSheet) {
+        ActionSheet(
+            title = "Monitor which server?",
+            subtitle = "Choosing another server connects to it",
+            actions = servers.map { srv ->
+                SheetAction(
+                    label = srv.name,
+                    icon = Icons.Rounded.Cloud,
+                    selected = srv.id == (connection as? ConnectionState.Connected)?.server?.id
+                ) { onPickServer(srv) }
+            },
+            onDismiss = { serverSheet = false }
+        )
+    }
+    if (rangeSheet) {
+        ActionSheet(
+            title = "Time range",
+            actions = RANGES.mapIndexed { i, r -> SheetAction(label = r.label, selected = i == rangeIdx) { rangeIdx = i } },
+            onDismiss = { rangeSheet = false }
+        )
     }
 }
 

@@ -22,6 +22,9 @@ class TerminalBuffer(private val maxLines: Int = 1000) {
 
     fun snapshot(): List<String> = lines.map { it.toString() }
 
+    /** Cursor column on the last (active) line. */
+    val cursorColumn: Int get() = col
+
     fun write(text: String) {
         for (ch in text) process(ch)
     }

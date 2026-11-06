@@ -174,3 +174,32 @@ fun parseServices(out: String): List<ServiceUnit> =
             ServiceUnit(p[0], p[2], p[3], p.getOrElse(4) { "" })
         } else null
     }.sortedBy { it.name }
+
+data class ListeningPort(val port: Int, val bind: String, val process: String?)
+
+private val PROC_NAME = Regex("\\(\"([^\"]+)\"")
+
+const val LIST_PORTS_CMD = "ss -ltnpH 2>/dev/null || ss -ltnH 2>/dev/null || netstat -ltn 2>/dev/null"
+
+/** Parses `ss -ltn[p]H` or `netstat -ltn` output into unique listening TCP ports. */
+fun parseListeningPorts(out: String): List<ListeningPort> {
+    val map = LinkedHashMap<Int, ListeningPort>()
+    for (line in out.lines()) {
+        val p = line.trim().split(WS)
+        if (p.size < 4) continue
+        val local = p[3]
+        val idx = local.lastIndexOf(':')
+        if (idx < 0) continue
+        val port = local.substring(idx + 1).toIntOrNull() ?: continue
+        val bind = local.substring(0, idx).trim('[', ']')
+        val proc = PROC_NAME.find(line)?.groupValues?.get(1)
+        val existing = map[port]
+        if (existing == null || (existing.process == null && proc != null)) {
+            map[port] = ListeningPort(port, bind, proc)
+        }
+    }
+    return map.values.sortedBy { it.port }
+}
+
+/** Ports that normally speak TLS, used to pick http vs https when opening in the browser. */
+fun likelyHttps(port: Int): Boolean = port == 443 || port == 8443 || port == 9443 || port == 9090 || port == 2083

@@ -2,17 +2,18 @@ package com.nexus.ssh.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Hub
@@ -25,6 +26,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.PullToRefreshBox
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -34,25 +36,26 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nexus.ssh.ServicesState
 import com.nexus.ssh.core.ssh.ServiceUnit
 import com.nexus.ssh.ui.LocalAccent
 import com.nexus.ssh.ui.Nx
+import com.nexus.ssh.ui.components.ActionSheet
 import com.nexus.ssh.ui.components.DialogShape
 import com.nexus.ssh.ui.components.EmptyState
 import com.nexus.ssh.ui.components.ErrorBox
-import com.nexus.ssh.ui.components.GlassCard
+import com.nexus.ssh.ui.components.IconBadge
+import com.nexus.ssh.ui.components.ListRow
 import com.nexus.ssh.ui.components.LoadingBar
+import com.nexus.ssh.ui.components.RowDivider
 import com.nexus.ssh.ui.components.ScreenTopBar
-import com.nexus.ssh.ui.components.StatusDot
+import com.nexus.ssh.ui.components.SheetAction
 import com.nexus.ssh.ui.nexusFieldColors
 
 private val FILTERS = listOf("All", "Running", "Stopped", "Failed")
@@ -60,6 +63,7 @@ private val FILTERS = listOf("All", "Running", "Stopped", "Failed")
 @Composable
 fun ServicesScreen(
     connected: Boolean,
+    serverName: String,
     state: ServicesState,
     onBack: () -> Unit,
     onConnect: () -> Unit,
@@ -68,11 +72,13 @@ fun ServicesScreen(
 ) {
     var query by remember { mutableStateOf("") }
     var filter by rememberSaveable { mutableIntStateOf(1) }
+    var menuFor by remember { mutableStateOf<ServiceUnit?>(null) }
     var pending by remember { mutableStateOf<Pair<ServiceUnit, String>?>(null) }
 
     val filtered = remember(state.units, query, filter) {
         state.units.filter {
-            val matches = it.name.contains(query.trim(), ignoreCase = true) || it.description.contains(query.trim(), ignoreCase = true)
+            val q = query.trim()
+            val matches = it.name.contains(q, ignoreCase = true) || it.description.contains(q, ignoreCase = true)
             val status = when (filter) {
                 1 -> it.running
                 2 -> !it.running && it.active != "failed"
@@ -84,7 +90,7 @@ fun ServicesScreen(
     }
 
     Column(Modifier.fillMaxSize()) {
-        ScreenTopBar("Services", onBack) {
+        ScreenTopBar("Services", onBack, subtitle = serverName.ifBlank { null }) {
             IconButton(onClick = onRefresh, enabled = connected) {
                 Icon(Icons.Rounded.Refresh, contentDescription = "Refresh", tint = if (connected) Color.White else Nx.Faint)
             }
@@ -109,75 +115,70 @@ fun ServicesScreen(
             placeholder = { Text("Search services") },
             leadingIcon = { Icon(Icons.Rounded.Search, null, tint = Nx.Muted) }
         )
-        Row(Modifier.padding(horizontal = 16.dp, vertical = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             FILTERS.forEachIndexed { i, name ->
                 Text(
                     name,
                     color = if (filter == i) Color(0xFF0B0D12) else Nx.Muted,
-                    fontSize = 13.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
+                        .heightIn(min = 38.dp)
+                        .clip(RoundedCornerShape(14.dp))
                         .background(if (filter == i) Color.White else Color.White.copy(alpha = 0.08f))
                         .clickable { filter = i }
-                        .padding(horizontal = 14.dp, vertical = 7.dp)
+                        .padding(horizontal = 16.dp, vertical = 9.dp)
                 )
             }
         }
         LoadingBar(state.loading)
         state.error?.let { ErrorBox(it, Modifier.padding(16.dp), onRefresh) }
-        if (state.error == null && !state.loading && filtered.isEmpty()) {
-            EmptyState(Icons.Rounded.Hub, "No services", "Nothing matches the current filter.")
-        }
-        LazyColumn(
-            Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(filtered, key = { it.name }) { u ->
-                GlassCard(Modifier.fillMaxWidth()) {
-                    Row(Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        StatusDot(
-                            when {
-                                u.running -> Nx.Green
-                                u.active == "failed" -> Nx.Red
-                                else -> Nx.Faint
-                            },
-                            size = 9.dp
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(u.name, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                StatusBadge(
-                                    when {
-                                        u.running -> "Running"
-                                        u.active == "failed" -> "Failed"
-                                        else -> "Stopped"
-                                    },
-                                    when {
-                                        u.running -> Nx.Green
-                                        u.active == "failed" -> Nx.Red
-                                        else -> Nx.Muted
-                                    }
-                                )
-                                Spacer(Modifier.width(8.dp))
-                                Text("${u.active} (${u.sub})", color = Nx.Muted, fontSize = 11.sp)
-                            }
-                            if (u.description.isNotBlank()) {
-                                Text(u.description, color = Nx.Muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            }
-                        }
-                        if (u.running) {
-                            IconButton(onClick = { pending = u to "restart" }) { Icon(Icons.Rounded.RestartAlt, "Restart", tint = Nx.Cyan) }
-                            IconButton(onClick = { pending = u to "stop" }) { Icon(Icons.Rounded.Stop, "Stop", tint = Nx.Red) }
-                        } else {
-                            IconButton(onClick = { pending = u to "start" }) { Icon(Icons.Rounded.PlayArrow, "Start", tint = Nx.Green) }
-                        }
+        PullToRefreshBox(isRefreshing = state.loading, onRefresh = onRefresh, modifier = Modifier.weight(1f)) {
+            if (state.error == null && !state.loading && filtered.isEmpty()) {
+                EmptyState(Icons.Rounded.Hub, "No services", "Nothing matches the current filter.")
+            }
+            LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
+                items(filtered, key = { it.name }) { u ->
+                    val tint = when {
+                        u.running -> Nx.Green
+                        u.active == "failed" -> Nx.Red
+                        else -> Nx.Muted
                     }
+                    ListRow(
+                        title = u.name.removeSuffix(".service"),
+                        subtitle = u.description.ifBlank { "${u.active} (${u.sub})" },
+                        leading = { IconBadge(Icons.Rounded.Hub, tint) },
+                        trailing = {
+                            StatusBadge(
+                                when {
+                                    u.running -> "Running"
+                                    u.active == "failed" -> "Failed"
+                                    else -> "Stopped"
+                                },
+                                tint
+                            )
+                        },
+                        onClick = { menuFor = u }
+                    )
+                    RowDivider()
                 }
             }
         }
+    }
+
+    menuFor?.let { u ->
+        val actions = buildList {
+            if (u.running) {
+                add(SheetAction("Restart", Icons.Rounded.RestartAlt, Nx.Cyan) { pending = u to "restart" })
+                add(SheetAction("Stop", Icons.Rounded.Stop, Nx.Red) { pending = u to "stop" })
+            } else {
+                add(SheetAction("Start", Icons.Rounded.PlayArrow, Nx.Green) { pending = u to "start" })
+            }
+        }
+        ActionSheet(title = u.name, subtitle = "${u.active} (${u.sub})", actions = actions, onDismiss = { menuFor = null })
     }
 
     pending?.let { (unit, action) ->

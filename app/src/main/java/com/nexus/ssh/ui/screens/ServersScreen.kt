@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -53,7 +54,10 @@ import com.nexus.ssh.core.ssh.ConnectionState
 import com.nexus.ssh.ui.LocalAccent
 import com.nexus.ssh.ui.Nx
 import com.nexus.ssh.ui.components.NexusLogo
+import com.nexus.ssh.ui.components.ActionSheet
 import com.nexus.ssh.ui.components.PrimaryButton
+import com.nexus.ssh.ui.components.SheetAction
+import com.nexus.ssh.ui.components.relativeTime
 import com.nexus.ssh.ui.components.SectionLabel
 import com.nexus.ssh.ui.components.StatusDot
 import com.nexus.ssh.ui.glass
@@ -83,6 +87,7 @@ fun ServersScreen(
 ) {
     val connectedId = (connection as? ConnectionState.Connected)?.server?.id
     val connecting = connection is ConnectionState.Connecting
+    var menuFor by remember { mutableStateOf<ServerEntity?>(null) }
     val favorites = buildList {
         add(Fav("Home", null, false))
         add(Fav("tmp", "/tmp", false))
@@ -102,6 +107,7 @@ fun ServersScreen(
             Modifier
                 .fillMaxHeight()
                 .fillMaxWidth(0.90f)
+                .widthIn(max = 420.dp)
                 .clip(RoundedCornerShape(topEnd = 34.dp, bottomEnd = 34.dp))
                 .background(Color(0xF2121419))
                 .border(
@@ -152,7 +158,6 @@ fun ServersScreen(
                     val spec = serverIconSpec(icons[server.id])
                     val isSelected = server.id == selectedId
                     val isConnected = server.id == connectedId
-                    var menu by remember { mutableStateOf(false) }
                     Row(
                         Modifier
                             .fillMaxWidth()
@@ -175,42 +180,10 @@ fun ServersScreen(
                         Spacer(Modifier.width(14.dp))
                         Column(Modifier.weight(1f)) {
                             Text(server.name, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Medium, maxLines = 1)
-                            Text("${server.username}@${server.hostname}", color = Nx.Muted, fontSize = 12.sp, maxLines = 1)
+                            Text("${server.username}@${server.hostname} · ${relativeTime(server.lastConnectedAt)}", color = Nx.Muted, fontSize = 12.sp, maxLines = 1)
                         }
-                        Box {
-                            IconButton(onClick = { menu = true }) {
-                                Icon(Icons.Rounded.MoreVert, contentDescription = "Server options", tint = Color.White)
-                            }
-                            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                                if (isConnected) {
-                                    DropdownMenuItem(
-                                        text = { Text("Disconnect") },
-                                        leadingIcon = { Icon(Icons.Rounded.PowerSettingsNew, null) },
-                                        onClick = { menu = false; onDisconnect() }
-                                    )
-                                } else {
-                                    DropdownMenuItem(
-                                        text = { Text("Connect") },
-                                        leadingIcon = { Icon(Icons.Rounded.PowerSettingsNew, null) },
-                                        onClick = { menu = false; onConnect(server) }
-                                    )
-                                }
-                                DropdownMenuItem(
-                                    text = { Text("Edit") },
-                                    leadingIcon = { Icon(Icons.Rounded.Edit, null) },
-                                    onClick = { menu = false; onEdit(server) }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Change icon") },
-                                    leadingIcon = { Icon(Icons.Rounded.Palette, null) },
-                                    onClick = { menu = false; onChangeIcon(server) }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Delete", color = Nx.Red) },
-                                    leadingIcon = { Icon(Icons.Rounded.Delete, null, tint = Nx.Red) },
-                                    onClick = { menu = false; onDelete(server) }
-                                )
-                            }
+                        IconButton(onClick = { menuFor = server }) {
+                            Icon(Icons.Rounded.MoreVert, contentDescription = "Server options", tint = Color.White)
                         }
                     }
                 }
@@ -259,5 +232,17 @@ fun ServersScreen(
                 Text("Manage Servers", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
             }
         }
+    }
+
+    menuFor?.let { srv ->
+        val isConnected = srv.id == connectedId
+        val actions = buildList {
+            if (isConnected) add(SheetAction("Disconnect", Icons.Rounded.PowerSettingsNew, Nx.Red) { onDisconnect() })
+            else add(SheetAction("Connect", Icons.Rounded.PowerSettingsNew, Nx.Green) { onConnect(srv) })
+            add(SheetAction("Edit", Icons.Rounded.Edit) { onEdit(srv) })
+            add(SheetAction("Change icon", Icons.Rounded.Palette) { onChangeIcon(srv) })
+            add(SheetAction("Delete", Icons.Rounded.Delete, Nx.Red) { onDelete(srv) })
+        }
+        ActionSheet(title = srv.name, subtitle = "${srv.username}@${srv.hostname}:${srv.port}", actions = actions, onDismiss = { menuFor = null })
     }
 }

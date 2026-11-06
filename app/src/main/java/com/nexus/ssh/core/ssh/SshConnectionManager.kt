@@ -16,13 +16,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import net.schmizz.sshj.SSHClient
 import net.schmizz.sshj.common.Buffer
+import net.schmizz.sshj.connection.channel.direct.LocalPortForwarder
+import net.schmizz.sshj.connection.channel.direct.Parameters
 import net.schmizz.sshj.transport.verification.HostKeyVerifier
 import net.schmizz.sshj.userauth.keyprovider.KeyProvider
 import net.schmizz.sshj.userauth.password.PasswordFinder
 import net.schmizz.sshj.userauth.password.PasswordUtils
+import java.net.InetSocketAddress
+import java.net.ServerSocket
 import java.security.MessageDigest
 import java.security.PublicKey
 import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
 import javax.net.SocketFactory
 
 sealed interface ConnectionState {
@@ -217,6 +222,58 @@ class SshConnectionManager(
 
     fun getClient(): SSHClient? = sshClient
 
+    private val forwards = HashMap<Int, Pair<LocalPortForwarder, ServerSocket>>()
+    private val forwardPorts = HashMap<Int, Int>()
+
+    /**
+     * Opens (or reuses) an SSH local port forward 127.0.0.1:<random> -> server's 127.0.0.1:[remotePort]
+     * so web apps on the server can be shown in the in-app browser. Returns the local port.
+     */
+    suspend fun openLocalForward(remotePort: Int): Result<Int> = withContext(Dispatchers.IO) {
+        val client = sshClient
+            ?: return@withContext Result.failure(IllegalStateException("Not connected"))
+        synchronized(forwards) {
+            forwardPorts[remotePort]?.let { return@withContext Result.success(it) }
+        }
+        try {
+            val socket = ServerSocket()
+            socket.reuseAddress = true
+            socket.bind(InetSocketAddress("127.0.0.1", 0))
+            val params = Parameters("127.0.0.1", socket.localPort, "127.0.0.1", remotePort)
+            val forwarder = client.newLocalPortForwarder(params, socket)
+            thread(isDaemon = true, name = "nexus-forward-$remotePort") {
+                try {
+                    forwarder.listen()
+                } catch (ignored: Exception) {
+                }
+            }
+            synchronized(forwards) {
+                forwards[remotePort] = Pair(forwarder, socket)
+                forwardPorts[remotePort] = socket.localPort
+            }
+            Result.success(socket.localPort)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    private fun closeForwards() {
+        synchronized(forwards) {
+            for ((forwarder, socket) in forwards.values) {
+                try {
+                    forwarder.close()
+                } catch (ignored: Exception) {
+                }
+                try {
+                    socket.close()
+                } catch (ignored: Exception) {
+                }
+            }
+            forwards.clear()
+            forwardPorts.clear()
+        }
+    }
+
     fun isAlive(): Boolean {
         val c = sshClient ?: return false
         return c.isConnected && c.isAuthenticated
@@ -238,6 +295,7 @@ class SshConnectionManager(
     }
 
     private fun disconnectInternal(resetState: Boolean = true) {
+        closeForwards()
         try {
             sshClient?.disconnect()
         } catch (ignored: Exception) {

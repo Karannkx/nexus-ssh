@@ -15,14 +15,18 @@ import com.nexus.ssh.core.sftp.SftpManager
 import com.nexus.ssh.core.ssh.ConnectionState
 import com.nexus.ssh.core.ssh.DOCKER_PS_ARGS
 import com.nexus.ssh.core.ssh.DockerContainer
+import com.nexus.ssh.core.ssh.LIST_PORTS_CMD
 import com.nexus.ssh.core.ssh.LIST_SERVICES_CMD
+import com.nexus.ssh.core.ssh.ListeningPort
 import com.nexus.ssh.core.ssh.ServiceUnit
 import com.nexus.ssh.core.ssh.SshConnectionManager
 import com.nexus.ssh.core.ssh.SshTerminalSession
 import com.nexus.ssh.core.ssh.TELEMETRY_SCRIPT
 import com.nexus.ssh.core.ssh.Telemetry
 import com.nexus.ssh.core.ssh.TerminalBuffer
+import com.nexus.ssh.core.ssh.likelyHttps
 import com.nexus.ssh.core.ssh.parseDockerPs
+import com.nexus.ssh.core.ssh.parseListeningPorts
 import com.nexus.ssh.core.ssh.parseServices
 import com.nexus.ssh.core.ssh.parseTelemetry
 import kotlinx.coroutines.Dispatchers
@@ -93,6 +97,15 @@ enum class LogSource(val label: String, val command: String) {
     WARNINGS("Warnings", "journalctl -b -p warning -n 400 --no-pager")
 }
 
+data class WebPortsState(
+    val ports: List<ListeningPort> = emptyList(),
+    val loading: Boolean = false,
+    val error: String? = null
+)
+
+/** Page currently shown in the in-app browser (url is already the loopback tunnel url for server apps). */
+data class BrowserTarget(val label: String, val url: String, val remotePort: Int?)
+
 data class LogsState(
     val source: LogSource? = LogSource.SYSTEM,
     val customPath: String = "",
@@ -161,6 +174,12 @@ class NexusViewModel(private val app: Application) : AndroidViewModel(app) {
     private val _logs = MutableStateFlow(LogsState())
     val logs: StateFlow<LogsState> = _logs
 
+    private val _webPorts = MutableStateFlow(WebPortsState())
+    val webPorts: StateFlow<WebPortsState> = _webPorts
+
+    private val _browserTarget = MutableStateFlow<BrowserTarget?>(null)
+    val browserTarget: StateFlow<BrowserTarget?> = _browserTarget
+
     // ---------- notifications (in-app activity log) ----------
     private val _notices = MutableStateFlow<List<AppNotice>>(emptyList())
     val notices: StateFlow<List<AppNotice>> = _notices
@@ -205,6 +224,15 @@ class NexusViewModel(private val app: Application) : AndroidViewModel(app) {
     private val _terminalLines = MutableStateFlow<List<String>>(emptyList())
     val terminalLines: StateFlow<List<String>> = _terminalLines
 
+    private val _terminalCursor = MutableStateFlow(0)
+    val terminalCursor: StateFlow<Int> = _terminalCursor
+
+    private fun publishActive() {
+        val tab = tabs.firstOrNull { it.id == _activeTab.value }
+        _terminalLines.value = tab?.buffer?.snapshot() ?: emptyList()
+        _terminalCursor.value = tab?.buffer?.cursorColumn ?: 0
+    }
+
     private fun publishTabs() {
         _tabInfos.value = tabs.map { TerminalTabInfo(it.id, it.title) }
     }
@@ -219,7 +247,7 @@ class NexusViewModel(private val app: Application) : AndroidViewModel(app) {
         tab.job = viewModelScope.launch {
             session.terminalOutput.collect { chunk ->
                 tab.buffer.write(chunk)
-                if (_activeTab.value == tab.id) _terminalLines.value = tab.buffer.snapshot()
+                if (_activeTab.value == tab.id) publishActive()
             }
         }
         viewModelScope.launch {
@@ -234,7 +262,7 @@ class NexusViewModel(private val app: Application) : AndroidViewModel(app) {
 
     fun selectTerminalTab(id: Int) {
         _activeTab.value = id
-        _terminalLines.value = tabs.firstOrNull { it.id == id }?.buffer?.snapshot() ?: emptyList()
+        publishActive()
     }
 
     fun closeTerminalTab(id: Int) {
@@ -248,7 +276,7 @@ class NexusViewModel(private val app: Application) : AndroidViewModel(app) {
             tabs.isEmpty() && connected -> addTerminalTab()
             tabs.isEmpty() -> {
                 _activeTab.value = 0
-                _terminalLines.value = emptyList()
+                publishActive()
             }
             _activeTab.value == id -> selectTerminalTab(tabs[tabs.size - 1].id)
         }
@@ -262,7 +290,7 @@ class NexusViewModel(private val app: Application) : AndroidViewModel(app) {
     fun clearTerminal() {
         val tab = tabs.firstOrNull { it.id == _activeTab.value } ?: return
         tab.buffer.clear()
-        _terminalLines.value = emptyList()
+        publishActive()
         sendTerminalInput("\u000c")
     }
 
@@ -284,7 +312,7 @@ class NexusViewModel(private val app: Application) : AndroidViewModel(app) {
         nextTabId = 1
         publishTabs()
         _activeTab.value = 0
-        _terminalLines.value = emptyList()
+        publishActive()
     }
 
     // ---------- server management ----------
@@ -468,7 +496,7 @@ class NexusViewModel(private val app: Application) : AndroidViewModel(app) {
             tab.session?.destroy()
             tab.session = null
         }
-        _terminalLines.value = tabs.firstOrNull { it.id == _activeTab.value }?.buffer?.snapshot() ?: emptyList()
+        publishActive()
         sftp?.close()
         sftp = null
         _telemetry.value = null
@@ -481,6 +509,8 @@ class NexusViewModel(private val app: Application) : AndroidViewModel(app) {
         _dockerDetails.value = null
         _services.value = ServicesState()
         _logs.value = LogsState()
+        _webPorts.value = WebPortsState()
+        _browserTarget.value = null
     }
 
     // ---------- telemetry & monitor ----------
@@ -819,6 +849,78 @@ class NexusViewModel(private val app: Application) : AndroidViewModel(app) {
                 .onSuccess { out -> _logs.update { it.copy(lines = out.lines(), loading = false) } }
                 .onFailure { err -> _logs.update { it.copy(lines = emptyList(), loading = false, error = describe(err)) } }
         }
+    }
+
+    // ---------- browser (web apps on the server through an SSH tunnel) ----------
+    fun refreshWebPorts() {
+        if (connectionState.value !is ConnectionState.Connected) return
+        _webPorts.update { it.copy(loading = true, error = null) }
+        viewModelScope.launch {
+            val res = ssh.execute(LIST_PORTS_CMD).getOrElse { err ->
+                _webPorts.value = WebPortsState(error = describe(err))
+                return@launch
+            }
+            val ports = parseListeningPorts(res.stdout)
+            _webPorts.value = if (ports.isEmpty()) {
+                WebPortsState(error = "No listening ports found (the server needs the ss or netstat command).")
+            } else {
+                WebPortsState(ports = ports)
+            }
+        }
+    }
+
+    fun openWebPort(port: Int, https: Boolean, path: String = "/") {
+        if (connectionState.value !is ConnectionState.Connected) {
+            toast("Connect to a server first")
+            return
+        }
+        viewModelScope.launch {
+            ssh.openLocalForward(port)
+                .onSuccess { local ->
+                    val scheme = if (https) "https" else "http"
+                    _browserTarget.value = BrowserTarget("Port $port", "$scheme://127.0.0.1:$local$path", port)
+                }
+                .onFailure { toast("Tunnel to port $port failed: ${describe(it)}") }
+        }
+    }
+
+    /** Accepts "8080", "localhost:3000/app", "https://127.0.0.1:9443" (server apps) or any normal web address. */
+    fun openBrowserInput(raw: String) {
+        val input = raw.trim()
+        if (input.isEmpty()) return
+        val portOnly = input.toIntOrNull()
+        if (portOnly != null) {
+            if (portOnly in 1..65535) openWebPort(portOnly, likelyHttps(portOnly)) else toast("Port must be between 1 and 65535")
+            return
+        }
+        val withScheme = if (input.startsWith("http://") || input.startsWith("https://")) input else "http://$input"
+        val uri = try {
+            java.net.URI(withScheme)
+        } catch (e: Exception) {
+            toast("That address is not valid")
+            return
+        }
+        val host = uri.host
+        if (host == null) {
+            toast("That address is not valid")
+            return
+        }
+        val server = (connectionState.value as? ConnectionState.Connected)?.server
+        val isServerLocal = host == "localhost" || host == "127.0.0.1" ||
+            (server != null && host.equals(server.hostname, ignoreCase = true))
+        val https = withScheme.startsWith("https://")
+        if (isServerLocal) {
+            val port = if (uri.port != -1) uri.port else if (https) 443 else 80
+            val path = (uri.rawPath ?: "").ifEmpty { "/" } + (uri.rawQuery?.let { "?$it" } ?: "")
+            openWebPort(port, https, path)
+        } else {
+            val direct = if (input.startsWith("http://") || input.startsWith("https://")) input else "https://$input"
+            _browserTarget.value = BrowserTarget(host, direct, null)
+        }
+    }
+
+    fun closeBrowserTarget() {
+        _browserTarget.value = null
     }
 
     override fun onCleared() {
