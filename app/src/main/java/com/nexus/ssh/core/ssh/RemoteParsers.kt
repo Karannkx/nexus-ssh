@@ -203,3 +203,17 @@ fun parseListeningPorts(out: String): List<ListeningPort> {
 
 /** Ports that normally speak TLS, used to pick http vs https when opening in the browser. */
 fun likelyHttps(port: Int): Boolean = port == 443 || port == 8443 || port == 9443 || port == 9090 || port == 2083
+
+data class ProcessInfo(val pid: Int, val user: String, val cpu: Float, val mem: Float, val command: String)
+
+const val PS_CMD =
+    "(ps -eo pid=,user=,pcpu=,pmem=,comm= --sort=-pcpu 2>/dev/null || ps -eo pid,user,pcpu,pmem,comm) | head -n 160"
+
+fun parseProcesses(out: String): List<ProcessInfo> =
+    out.lines().mapNotNull { line ->
+        val p = line.trim().split(WS, limit = 5)
+        val pid = p.getOrNull(0)?.toIntOrNull()
+        if (p.size == 5 && pid != null) {
+            ProcessInfo(pid, p[1], p[2].toFloatOrNull() ?: 0f, p[3].toFloatOrNull() ?: 0f, p[4])
+        } else null
+    }

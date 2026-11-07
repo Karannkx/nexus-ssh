@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -40,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nexus.ssh.ServicesState
@@ -50,6 +54,8 @@ import com.nexus.ssh.ui.components.ActionSheet
 import com.nexus.ssh.ui.components.DialogShape
 import com.nexus.ssh.ui.components.EmptyState
 import com.nexus.ssh.ui.components.ErrorBox
+import com.nexus.ssh.ui.components.GlassCard
+import com.nexus.ssh.ui.components.StatusDot
 import com.nexus.ssh.ui.components.IconBadge
 import com.nexus.ssh.ui.components.ListRow
 import com.nexus.ssh.ui.components.LoadingBar
@@ -72,7 +78,6 @@ fun ServicesScreen(
 ) {
     var query by remember { mutableStateOf("") }
     var filter by rememberSaveable { mutableIntStateOf(1) }
-    var menuFor by remember { mutableStateOf<ServiceUnit?>(null) }
     var pending by remember { mutableStateOf<Pair<ServiceUnit, String>?>(null) }
 
     val filtered = remember(state.units, query, filter) {
@@ -140,45 +145,53 @@ fun ServicesScreen(
             if (state.error == null && !state.loading && filtered.isEmpty()) {
                 EmptyState(Icons.Rounded.Hub, "No services", "Nothing matches the current filter.")
             }
-            LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
+            LazyColumn(
+                Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 items(filtered, key = { it.name }) { u ->
                     val tint = when {
                         u.running -> Nx.Green
                         u.active == "failed" -> Nx.Red
                         else -> Nx.Muted
                     }
-                    ListRow(
-                        title = u.name.removeSuffix(".service"),
-                        subtitle = u.description.ifBlank { "${u.active} (${u.sub})" },
-                        leading = { IconBadge(Icons.Rounded.Hub, tint) },
-                        trailing = {
-                            StatusBadge(
-                                when {
-                                    u.running -> "Running"
-                                    u.active == "failed" -> "Failed"
-                                    else -> "Stopped"
-                                },
-                                tint
-                            )
-                        },
-                        onClick = { menuFor = u }
-                    )
-                    RowDivider()
+                    GlassCard(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
+                        Row(
+                            Modifier.padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            StatusDot(tint, size = 9.dp)
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(u.name.removeSuffix(".service"), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    StatusBadge(
+                                        when {
+                                            u.running -> "Running"
+                                            u.active == "failed" -> "Failed"
+                                            else -> "Stopped"
+                                        },
+                                        tint
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("${u.active} (${u.sub})", color = Nx.Muted, fontSize = 11.sp, maxLines = 1)
+                                }
+                                if (u.description.isNotBlank()) {
+                                    Text(u.description, color = Nx.Muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                }
+                            }
+                            if (u.running) {
+                                IconButton(onClick = { pending = u to "restart" }) { Icon(Icons.Rounded.RestartAlt, "Restart", tint = Nx.Cyan) }
+                                IconButton(onClick = { pending = u to "stop" }) { Icon(Icons.Rounded.Stop, "Stop", tint = Nx.Red) }
+                            } else {
+                                IconButton(onClick = { pending = u to "start" }) { Icon(Icons.Rounded.PlayArrow, "Start", tint = Nx.Green) }
+                            }
+                        }
+                    }
                 }
             }
         }
-    }
-
-    menuFor?.let { u ->
-        val actions = buildList {
-            if (u.running) {
-                add(SheetAction("Restart", Icons.Rounded.RestartAlt, Nx.Cyan) { pending = u to "restart" })
-                add(SheetAction("Stop", Icons.Rounded.Stop, Nx.Red) { pending = u to "stop" })
-            } else {
-                add(SheetAction("Start", Icons.Rounded.PlayArrow, Nx.Green) { pending = u to "start" })
-            }
-        }
-        ActionSheet(title = u.name, subtitle = "${u.active} (${u.sub})", actions = actions, onDismiss = { menuFor = null })
     }
 
     pending?.let { (unit, action) ->

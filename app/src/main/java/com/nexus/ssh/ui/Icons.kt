@@ -66,6 +66,13 @@ val ListIcon: ImageVector = strokeIcon("List") {
     moveTo(5f, 17f); lineTo(19f, 17f)
 }
 
+val DocIcon: ImageVector = strokeIcon("Doc", 1.9f) {
+    box(5f, 3f, 14f, 18f)
+    moveTo(8.5f, 9f); lineTo(15.5f, 9f)
+    moveTo(8.5f, 13f); lineTo(15.5f, 13f)
+    moveTo(8.5f, 17f); lineTo(12.5f, 17f)
+}
+
 val CubeIcon: ImageVector = strokeIcon("Cube") {
     moveTo(12f, 3f); lineTo(20f, 7.5f); lineTo(20f, 16.5f); lineTo(12f, 21f); lineTo(4f, 16.5f); lineTo(4f, 7.5f); close()
     moveTo(4f, 7.5f); lineTo(12f, 12f); lineTo(20f, 7.5f)

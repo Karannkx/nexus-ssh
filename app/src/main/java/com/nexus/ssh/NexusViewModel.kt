@@ -16,6 +16,9 @@ import com.nexus.ssh.core.ssh.ConnectionState
 import com.nexus.ssh.core.ssh.DOCKER_PS_ARGS
 import com.nexus.ssh.core.ssh.DockerContainer
 import com.nexus.ssh.core.ssh.LIST_PORTS_CMD
+import com.nexus.ssh.core.ssh.PS_CMD
+import com.nexus.ssh.core.ssh.ProcessInfo
+import com.nexus.ssh.core.ssh.parseProcesses
 import com.nexus.ssh.core.ssh.LIST_SERVICES_CMD
 import com.nexus.ssh.core.ssh.ListeningPort
 import com.nexus.ssh.core.ssh.ServiceUnit
@@ -97,6 +100,12 @@ enum class LogSource(val label: String, val command: String) {
     WARNINGS("Warnings", "journalctl -b -p warning -n 400 --no-pager")
 }
 
+data class ProcessesState(
+    val items: List<ProcessInfo> = emptyList(),
+    val loading: Boolean = false,
+    val error: String? = null
+)
+
 data class WebPortsState(
     val ports: List<ListeningPort> = emptyList(),
     val loading: Boolean = false,
@@ -173,6 +182,9 @@ class NexusViewModel(private val app: Application) : AndroidViewModel(app) {
 
     private val _logs = MutableStateFlow(LogsState())
     val logs: StateFlow<LogsState> = _logs
+
+    private val _processes = MutableStateFlow(ProcessesState())
+    val processes: StateFlow<ProcessesState> = _processes
 
     private val _webPorts = MutableStateFlow(WebPortsState())
     val webPorts: StateFlow<WebPortsState> = _webPorts
@@ -510,6 +522,7 @@ class NexusViewModel(private val app: Application) : AndroidViewModel(app) {
         _services.value = ServicesState()
         _logs.value = LogsState()
         _webPorts.value = WebPortsState()
+        _processes.value = ProcessesState()
         _browserTarget.value = null
     }
 
@@ -848,6 +861,38 @@ class NexusViewModel(private val app: Application) : AndroidViewModel(app) {
             runWithSudoFallback("tail -n 400 -- '$clean'")
                 .onSuccess { out -> _logs.update { it.copy(lines = out.lines(), loading = false) } }
                 .onFailure { err -> _logs.update { it.copy(lines = emptyList(), loading = false, error = describe(err)) } }
+        }
+    }
+
+    // ---------- processes ----------
+    fun refreshProcesses() {
+        if (connectionState.value !is ConnectionState.Connected) return
+        viewModelScope.launch {
+            if (_processes.value.items.isEmpty()) _processes.update { it.copy(loading = true, error = null) }
+            val res = ssh.execute(PS_CMD).getOrElse { err ->
+                _processes.value = ProcessesState(error = describe(err))
+                return@launch
+            }
+            val items = parseProcesses(res.stdout)
+            _processes.value = if (items.isEmpty()) {
+                ProcessesState(error = res.stderr.ifBlank { "Could not read the process list." }.trim())
+            } else {
+                ProcessesState(items = items)
+            }
+        }
+    }
+
+    fun killProcess(process: ProcessInfo, signal: String) {
+        if (signal !in setOf("TERM", "KILL") || process.pid <= 1) return
+        viewModelScope.launch {
+            val cmd = "kill -$signal ${process.pid} 2>&1 || sudo -n kill -$signal ${process.pid} 2>&1"
+            val res = ssh.execute(cmd).getOrElse { err ->
+                toast(describe(err))
+                return@launch
+            }
+            if (res.ok) toast("Sent $signal to ${process.command} (${process.pid})")
+            else toast("Could not stop ${process.command}: " + res.stdout.ifBlank { res.stderr }.trim())
+            refreshProcesses()
         }
     }
 

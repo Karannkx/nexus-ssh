@@ -12,4 +12,7 @@ object Routes {
     const val SERVICES = "services"
     const val LOGS = "logs"
     const val BROWSER = "browser"
+    const val PROCESSES = "processes"
+    const val SNIPPETS = "snippets"
+    const val ABOUT = "about"
 }

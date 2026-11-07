@@ -4,6 +4,8 @@ import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
+data class Snippet(val id: Long, val title: String, val command: String)
+
 data class WebBookmark(val serverId: Long, val label: String, val input: String)
 
 /** Small SharedPreferences wrapper that exposes every setting as a StateFlow. */
@@ -44,6 +46,9 @@ class AppPrefs(context: Context) {
     /** User-defined order of the Home quick-access tiles (route keys). */
     val homeTileOrder: StateFlow<List<String>> = _tileOrder
 
+    private val _snippets = MutableStateFlow(loadSnippets())
+    val snippets: StateFlow<List<Snippet>> = _snippets
+
     private val _bookmarks = MutableStateFlow(loadBookmarks())
     val webBookmarks: StateFlow<List<WebBookmark>> = _bookmarks
 
@@ -65,6 +70,27 @@ class AppPrefs(context: Context) {
     }
 
     fun resetHomeTileOrder() = setHomeTileOrder(emptyList())
+
+    fun saveSnippet(id: Long?, title: String, command: String) {
+        val clean = Snippet(id ?: System.currentTimeMillis(), title.trim().replace('\n', ' '), command.trim().replace('\n', ' '))
+        val list = if (id == null) _snippets.value + clean else _snippets.value.map { if (it.id == id) clean else it }
+        persistSnippets(list)
+    }
+
+    fun removeSnippet(id: Long) = persistSnippets(_snippets.value.filterNot { it.id == id })
+
+    private fun persistSnippets(list: List<Snippet>) {
+        val raw = list.joinToString("\n") { "${it.id}\u001f${it.title}\u001f${it.command}" }
+        sp.edit().putString("snippets", raw).apply()
+        _snippets.value = list
+    }
+
+    private fun loadSnippets(): List<Snippet> =
+        (sp.getString("snippets", "") ?: "").split('\n').mapNotNull { line ->
+            val p = line.split('\u001f')
+            val id = p.getOrNull(0)?.toLongOrNull()
+            if (p.size == 3 && id != null) Snippet(id, p[1], p[2]) else null
+        }
 
     fun addBookmark(b: WebBookmark) {
         if (_bookmarks.value.any { it.serverId == b.serverId && it.input == b.input }) return

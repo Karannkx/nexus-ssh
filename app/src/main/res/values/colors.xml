@@ -1,4 +1,5 @@
 <resources>
+    <color name="ic_launcher_bg">#07090D</color>
     <color name="nexus_bg">#0A0C11</color>
     <color name="nexus_navy_900">#0B0F19</color>
     <color name="nexus_navy_800">#111827</color>

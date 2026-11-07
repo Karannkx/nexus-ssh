@@ -18,69 +18,42 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Description
-import androidx.compose.material.icons.rounded.Folder
-import androidx.compose.material.icons.rounded.Hub
-import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nexus.ssh.core.database.ServerEntity
 import com.nexus.ssh.core.ssh.ConnectionState
 import com.nexus.ssh.core.ssh.Telemetry
-import com.nexus.ssh.ui.GridIcon
+import com.nexus.ssh.ui.HOME_DEFAULT
 import com.nexus.ssh.ui.LocalAccent
 import com.nexus.ssh.ui.Nx
-import com.nexus.ssh.ui.PromptIcon
-import com.nexus.ssh.ui.PulseIcon
 import com.nexus.ssh.ui.Routes
-import com.nexus.ssh.ui.WhaleIcon
+import com.nexus.ssh.ui.appFor
 import com.nexus.ssh.ui.components.AppTile
-import com.nexus.ssh.ui.components.GroupSurface
-import com.nexus.ssh.ui.components.IconBadge
-import com.nexus.ssh.ui.components.ListRow
+import com.nexus.ssh.ui.components.GlassCard
 import com.nexus.ssh.ui.components.NexusLogo
+import com.nexus.ssh.ui.components.PrimaryButton
 import com.nexus.ssh.ui.components.ReorderableGrid
-import com.nexus.ssh.ui.components.RowDivider
-import com.nexus.ssh.ui.components.SectionHeader
 import com.nexus.ssh.ui.components.ServerStackIllustration
-import com.nexus.ssh.ui.components.relativeTime
-import com.nexus.ssh.ui.serverIconSpec
+import com.nexus.ssh.ui.components.StatusDot
 import java.util.Locale
 
-private class HomeTile(val route: String, val label: String, val icon: ImageVector, val tint: Color)
-
-private val HOME_TILES = listOf(
-    HomeTile(Routes.FILES, "Files", Icons.Rounded.Folder, Nx.Blue),
-    HomeTile(Routes.TERMINAL, "Terminal", PromptIcon, Color(0xFFE2E8F0)),
-    HomeTile(Routes.MONITOR, "Monitor", PulseIcon, Nx.Green),
-    HomeTile(Routes.DOCKER, "Docker", WhaleIcon, Color(0xFF38A3F5)),
-    HomeTile(Routes.SERVICES, "Services", Icons.Rounded.Hub, Nx.Purple),
-    HomeTile(Routes.APPS, "Apps", GridIcon, Color(0xFFCBD5E1)),
-    HomeTile(Routes.LOGS, "Logs", Icons.Rounded.Description, Nx.Amber),
-    HomeTile(Routes.BROWSER, "Browser", Icons.Rounded.Language, Nx.Cyan)
-)
-
-/** Saved order first, then any tile that is not in the saved list yet. */
+/** Saved order first, then any default tile that is not in the saved list yet. */
 private fun orderedKeys(saved: List<String>): List<String> {
-    val known = HOME_TILES.map { it.route }
-    val kept = saved.filter { it in known }.distinct()
-    return kept + known.filter { it !in kept }
+    val kept = saved.filter { it in HOME_DEFAULT }.distinct()
+    return kept + HOME_DEFAULT.filter { it !in kept }
 }
 
 @Composable
@@ -91,24 +64,20 @@ fun HomeScreen(
     connection: ConnectionState,
     telemetry: Telemetry?,
     unread: Int,
-    icons: Map<Long, String>,
     tileOrder: List<String>,
     onNavigate: (String) -> Unit,
     onSearch: () -> Unit,
     onNotifications: () -> Unit,
-    onSelectServer: (ServerEntity) -> Unit,
-    onConnectServer: (ServerEntity) -> Unit,
+    onConnect: () -> Unit,
     onDisconnect: () -> Unit,
     onAddServer: () -> Unit,
     onReorder: (List<String>) -> Unit
 ) {
-    val connectedId = (connection as? ConnectionState.Connected)?.server?.id
+    val connected = connection is ConnectionState.Connected
     val connecting = connection is ConnectionState.Connecting
     val total = servers.size
-    val connectedCount = if (connectedId != null) 1 else 0
     val wide = LocalConfiguration.current.screenWidthDp >= 600
     val accent = LocalAccent.current
-    val listed = (listOfNotNull(selected) + servers.filter { it.id != selected?.id }).take(5)
 
     Column(
         Modifier
@@ -126,11 +95,11 @@ fun HomeScreen(
                     .clickable { onNavigate(Routes.SERVERS) },
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                NexusLogo()
+                NexusLogo(size = 44.dp)
                 Spacer(Modifier.width(12.dp))
                 Column {
-                    Text("Nexus SSH", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                    Text("Secure • Manage • Anywhere", color = Nx.Muted, fontSize = 12.sp)
+                    Text("Nexus SSH", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text("Secure • Manage • Anywhere", color = Nx.Muted, fontSize = 12.sp, maxLines = 1)
                 }
             }
             IconButton(onClick = onSearch) {
@@ -156,81 +125,112 @@ fun HomeScreen(
         }
 
         // ---- greeting + illustration
-        Row(Modifier.fillMaxWidth().padding(top = 26.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().padding(top = 28.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(
                     if (displayName.isBlank()) "Hello" else "Hello, $displayName",
                     color = Color.White,
-                    fontSize = 34.sp,
+                    fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
-                    maxLines = 2
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
                     if (total == 0) "No servers added yet"
-                    else "$connectedCount of $total server${if (total == 1) "" else "s"} connected",
+                    else "${if (connected) 1 else 0} of $total server${if (total == 1) "" else "s"} connected",
                     color = Nx.Muted,
-                    fontSize = 16.sp
+                    fontSize = 15.sp
                 )
             }
-            ServerStackIllustration(Modifier.size(width = 120.dp, height = 108.dp))
+            Spacer(Modifier.width(8.dp))
+            ServerStackIllustration(Modifier.size(width = 104.dp, height = 96.dp))
         }
 
-        // ---- quick access: long-press an icon and drag it to rearrange
-        Spacer(Modifier.height(24.dp))
-        val keys = orderedKeys(tileOrder)
+        // ---- quick access: touch and hold an icon, then drag it to rearrange
+        Spacer(Modifier.height(26.dp))
         ReorderableGrid(
-            keys = keys,
+            keys = orderedKeys(tileOrder),
             columns = if (wide) 8 else 4,
-            cellHeight = 102.dp,
+            cellHeight = 104.dp,
             onReorder = onReorder,
             onItemClick = onNavigate
         ) { key, dragging ->
-            val tile = HOME_TILES.first { it.route == key }
-            AppTile(tile.icon, tile.tint, tile.label, dragging)
+            val app = appFor(key)
+            if (app != null) AppTile(app.label, dragging) { app.glyph() }
         }
-        Text(
-            "Touch and hold an icon to move it",
-            color = Nx.Faint,
-            fontSize = 12.sp,
-            modifier = Modifier.padding(start = 4.dp, top = 6.dp)
-        )
 
-        // ---- servers
-        SectionHeader("Servers", Modifier.padding(top = 4.dp))
-        GroupSurface {
-            listed.forEach { server ->
-                val spec = serverIconSpec(icons[server.id])
-                val isConnected = server.id == connectedId
-                val isSelected = server.id == selected?.id
-                ListRow(
-                    title = server.name,
-                    subtitle = when {
-                        isConnected && telemetry != null -> String.format(
-                            Locale.US, "Connected · CPU %.0f%% · %s", telemetry.cpuPercent, telemetry.uptime
-                        )
-                        isConnected -> "Connected · ${server.username}@${server.hostname}"
-                        isSelected && connection is ConnectionState.Error -> connection.message
-                        else -> "${server.username}@${server.hostname} · ${relativeTime(server.lastConnectedAt)}"
-                    },
-                    leading = { IconBadge(spec.icon, spec.tint) },
-                    trailing = {
-                        when {
-                            isConnected -> TextButton(onClick = onDisconnect) { Text("Disconnect", color = Nx.Red, fontWeight = FontWeight.SemiBold) }
-                            connecting && isSelected -> CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.5.dp, color = accent)
-                            else -> TextButton(onClick = { onConnectServer(server) }) { Text("Connect", color = accent, fontWeight = FontWeight.SemiBold) }
-                        }
-                    },
-                    onClick = { onSelectServer(server) }
-                )
-                RowDivider()
+        // ---- selected server
+        Spacer(Modifier.height(20.dp))
+        if (selected == null) {
+            GlassCard(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Add your first server", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                    Spacer(Modifier.height(4.dp))
+                    Text("Connect with a password or a private key.", color = Nx.Muted, fontSize = 13.sp)
+                    Spacer(Modifier.height(14.dp))
+                    PrimaryButton("Add server", onAddServer)
+                }
             }
-            ListRow(
-                title = "Add server",
-                titleColor = accent,
-                leading = { IconBadge(Icons.Rounded.Add, accent) },
-                onClick = onAddServer
-            )
+        } else {
+            GlassCard(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        StatusDot(
+                            when {
+                                connected -> Nx.Green
+                                connecting -> Nx.Amber
+                                else -> Nx.Faint
+                            }
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(selected.name, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(
+                                "${selected.username}@${selected.hostname}:${selected.port}",
+                                color = Nx.Muted,
+                                fontSize = 12.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        Box(
+                            Modifier
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(if (connected) Nx.Red.copy(alpha = 0.16f) else accent.copy(alpha = 0.18f))
+                                .clickable(enabled = !connecting) { if (connected) onDisconnect() else onConnect() }
+                                .padding(horizontal = 16.dp, vertical = 10.dp)
+                        ) {
+                            Text(
+                                when {
+                                    connecting -> "Connecting…"
+                                    connected -> "Disconnect"
+                                    else -> "Connect"
+                                },
+                                color = if (connected) Nx.Red else accent,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1
+                            )
+                        }
+                    }
+                    if (connected && telemetry != null) {
+                        Spacer(Modifier.height(10.dp))
+                        val mem = if (telemetry.memTotalKb > 0) telemetry.memUsedKb * 100f / telemetry.memTotalKb else 0f
+                        Text(
+                            String.format(Locale.US, "CPU %.0f%%  ·  RAM %.0f%%  ·  %s", telemetry.cpuPercent, mem, telemetry.uptime),
+                            color = Nx.Muted,
+                            fontSize = 12.sp,
+                            maxLines = 2
+                        )
+                    }
+                    if (connection is ConnectionState.Error) {
+                        Spacer(Modifier.height(10.dp))
+                        Text(connection.message, color = Nx.Red, fontSize = 12.sp)
+                    }
+                }
+            }
         }
         Spacer(Modifier.height(24.dp))
     }

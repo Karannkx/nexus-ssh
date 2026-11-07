@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.res.painterResource
@@ -36,10 +37,10 @@ import com.nexus.ssh.R
 
 /** Colour palette taken from the reference design. */
 object Nx {
-    val Bg = Color(0xFF0A0C11)
-    val BgTop = Color(0xFF161922)
-    val Surface = Color(0xFF171A22)
-    val SurfaceHigh = Color(0xFF1F232D)
+    val Bg = Color(0xFF0C0E12)
+    val BgTop = Color(0xFF15181E)
+    val Surface = Color(0xFF1A1D24)
+    val SurfaceHigh = Color(0xFF21252D)
     val Muted = Color(0xFF9AA3B2)
     val Faint = Color(0xFF6B7280)
     val Blue = Color(0xFF3B9BFF)
@@ -113,8 +114,11 @@ fun NexusTheme(accent: Color = Nx.Blue, content: @Composable () -> Unit) {
         error = Nx.Red
     )
     val base = LocalDensity.current
-    // Keep text scalable for accessibility but stop very large font settings from breaking layouts
-    val density = Density(base.density, fontScale = base.fontScale.coerceAtMost(1.15f))
+    val widthDp = LocalConfiguration.current.screenWidthDp
+    // The layouts are designed for ~390dp wide phones. On narrower screens (or when the system
+    // "display size" is large) everything is scaled down uniformly instead of clipping or wrapping.
+    val k = if (widthDp < 390) (widthDp / 390f).coerceAtLeast(0.78f) else 1f
+    val density = Density(base.density * k, fontScale = base.fontScale.coerceIn(0.9f, 1.1f))
     CompositionLocalProvider(LocalAccent provides accent, LocalDensity provides density) {
         MaterialTheme(
             colorScheme = scheme,

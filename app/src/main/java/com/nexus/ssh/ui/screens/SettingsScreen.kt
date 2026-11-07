@@ -60,6 +60,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.nexus.ssh.AppInfo
 import com.nexus.ssh.BuildConfig
 import com.nexus.ssh.core.database.ServerEntity
 import com.nexus.ssh.core.prefs.AppPrefs
@@ -110,7 +111,7 @@ fun SettingsScreen(
     onDeleteServer: (ServerEntity) -> Unit,
     onClearHostKeys: () -> Unit,
     onToggleAppLock: (Boolean) -> Unit,
-    onOpenUrl: (String) -> Unit
+    onOpenAbout: () -> Unit
 ) {
     val name by prefs.displayName.collectAsState()
     val wallpaper by prefs.showWallpaper.collectAsState()
@@ -272,23 +273,18 @@ fun SettingsScreen(
         SectionHeader("About")
         GroupSurface {
             ListRow(
-                title = "Nexus SSH",
-                subtitle = "Version ${BuildConfig.VERSION_NAME} · MIT licence",
-                leading = { IconBadge(Icons.Rounded.Info, Nx.Cyan) }
-            )
-            RowDivider()
-            ListRow(
-                title = "Source code on GitHub",
-                subtitle = "github.com/Karannkx/nexus-ssh",
+                title = "About Nexus SSH",
+                subtitle = "Version ${BuildConfig.VERSION_NAME} · developed by ${AppInfo.DEVELOPER}",
+                leading = { IconBadge(Icons.Rounded.Info, Nx.Cyan) },
                 trailing = { Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = Nx.Faint) },
-                onClick = { onOpenUrl("https://github.com/Karannkx/nexus-ssh") }
+                onClick = onOpenAbout
             )
         }
         Text(
-            "Built with Kotlin, Jetpack Compose, SSHJ and Room. Typeface: Inter (SIL Open Font License).",
+            "Made by ${AppInfo.DEVELOPER}",
             color = Nx.Muted,
             fontSize = 12.sp,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp)
         )
         Spacer(Modifier.height(24.dp))
     }

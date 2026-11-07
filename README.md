@@ -38,7 +38,9 @@
 | 🐳 | **Docker manager** | Container list, start / stop / restart, details and logs |
 | ⚙️ | **systemd services** | Search, filter (running / stopped / failed), start / stop / restart with confirmation |
 | 🌐 | **Built-in browser** | Open any web app installed on the server (Portainer, Grafana, Jellyfin, Jupyter…) through a secure SSH tunnel, detected ports, bookmarks, "Open in browser" for Docker ports |
-| 🧩 | **Launcher home** | Android-style icon grid: touch and hold an icon, drag it, drop it to rearrange |
+| 🧮 | **Process manager** | Live process list sorted by CPU or memory, search, terminate or force-kill with confirmation |
+| ⚡ | **Snippets** | Save the commands you use often and run them in the terminal with one tap |
+| 🧩 | **Launcher home** | Android-style icon grid you can rearrange by touching, holding and dragging, plus an A-Z app drawer with search |
 | 📜 | **Log viewer** | journald / syslog, kernel, SSH and any custom log file with live filtering |
 | 🔒 | **App lock** | Optional biometric / device-credential lock and screenshot protection |
 | 🎨 | **Theming** | Glass UI with wallpaper toggle and accent colours, adjustable terminal font size and refresh rate |

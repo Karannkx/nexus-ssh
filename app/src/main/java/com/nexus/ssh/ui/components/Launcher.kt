@@ -61,35 +61,26 @@ import com.nexus.ssh.ui.LocalAccent
 import com.nexus.ssh.ui.Nx
 import kotlin.math.roundToInt
 
-/** Polished app icon: tinted squircle with a soft glow behind the glyph. */
+/** App icon: dark rounded tile with a coloured glyph (no glow), label underneath. */
 @Composable
-fun AppTile(icon: ImageVector, tint: Color, label: String, dragging: Boolean, modifier: Modifier = Modifier) {
-    val shape = RoundedCornerShape(22.dp)
+fun AppTile(label: String, dragging: Boolean, modifier: Modifier = Modifier, glyph: @Composable () -> Unit) {
+    val shape = RoundedCornerShape(20.dp)
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             Modifier
-                .size(68.dp)
-                .shadow(if (dragging) 18.dp else 8.dp, shape, ambientColor = Color.Black, spotColor = tint)
-                .background(Brush.verticalGradient(listOf(tint.copy(alpha = 0.30f), Color(0xFF14171E))), shape)
-                .border(
-                    1.dp,
-                    Brush.verticalGradient(listOf(tint.copy(alpha = 0.60f), Color.White.copy(alpha = 0.06f))),
-                    shape
-                ),
+                .size(64.dp)
+                .shadow(if (dragging) 14.dp else 0.dp, shape, ambientColor = Color.Black, spotColor = Color.Black)
+                .background(Brush.verticalGradient(listOf(Color(0xFF2A2E38), Color(0xFF1B1E26))), shape)
+                .border(1.dp, Color.White.copy(alpha = 0.10f), shape),
             contentAlignment = Alignment.Center
         ) {
-            Box(
-                Modifier
-                    .size(48.dp)
-                    .background(Brush.radialGradient(listOf(tint.copy(alpha = 0.40f), Color.Transparent)), RoundedCornerShape(24.dp))
-            )
-            Icon(icon, contentDescription = label, tint = Color.White, modifier = Modifier.size(32.dp))
+            glyph()
         }
         Spacer(Modifier.height(8.dp))
         Text(
             label,
             color = Color.White,
-            fontSize = 13.sp,
+            fontSize = 12.5.sp,
             fontWeight = FontWeight.Medium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

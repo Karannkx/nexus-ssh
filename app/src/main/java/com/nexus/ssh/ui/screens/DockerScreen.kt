@@ -46,6 +46,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nexus.ssh.DockerDetails
@@ -58,6 +59,8 @@ import com.nexus.ssh.ui.WhaleIcon
 import com.nexus.ssh.ui.components.ActionSheet
 import com.nexus.ssh.ui.components.EmptyState
 import com.nexus.ssh.ui.components.ErrorBox
+import com.nexus.ssh.ui.components.GlassCard
+import com.nexus.ssh.ui.components.StatusDot
 import com.nexus.ssh.ui.components.IconBadge
 import com.nexus.ssh.ui.components.ListRow
 import com.nexus.ssh.ui.components.LoadingBar
@@ -93,8 +96,6 @@ fun DockerScreen(
     onCloseDetails: () -> Unit,
     onOpenPort: (Int) -> Unit
 ) {
-    var menuFor by remember { mutableStateOf<DockerContainer?>(null) }
-
     Column(Modifier.fillMaxSize()) {
         ScreenTopBar("Docker", onBack, subtitle = serverName.ifBlank { null }) {
             IconButton(onClick = onRefresh, enabled = connected) {
@@ -133,7 +134,11 @@ fun DockerScreen(
             if (state.error == null && !state.loading && state.containers.isEmpty()) {
                 EmptyState(CubeIcon, "No containers", "Docker is reachable but there are no containers yet.")
             }
-            LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
+            LazyColumn(
+                Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 items(state.containers, key = { it.id }) { c ->
                     val tint = when (c.state) {
                         "running" -> Nx.Green
@@ -141,37 +146,31 @@ fun DockerScreen(
                         "dead" -> Nx.Red
                         else -> Nx.Muted
                     }
-                    ListRow(
-                        title = c.name,
-                        subtitle = c.image + "\n" + c.status,
-                        leading = { IconBadge(CubeIcon, tint) },
-                        trailing = {
+                    GlassCard(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp), onClick = { onOpenDetails(c) }) {
+                        Column(Modifier.padding(start = 16.dp, end = 6.dp, top = 14.dp, bottom = 4.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
+                                StatusDot(tint, size = 9.dp)
+                                Spacer(Modifier.width(10.dp))
+                                Text(c.name, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, modifier = Modifier.weight(1f), overflow = TextOverflow.Ellipsis)
                                 StatusBadge(c.state.replaceFirstChar { it.uppercase() }, tint)
-                                IconButton(onClick = { menuFor = c }) {
-                                    Icon(Icons.Rounded.MoreVert, contentDescription = "Actions", tint = Nx.Muted)
+                                Spacer(Modifier.width(10.dp))
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            Text(c.image, color = Nx.Muted, fontSize = 12.sp, fontFamily = FontFamily.Monospace, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(c.status, color = Nx.Muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                                if (c.running) {
+                                    IconButton(onClick = { onAction(c, "restart") }) { Icon(Icons.Rounded.RestartAlt, "Restart", tint = Nx.Cyan) }
+                                    IconButton(onClick = { onAction(c, "stop") }) { Icon(Icons.Rounded.Stop, "Stop", tint = Nx.Red) }
+                                } else {
+                                    IconButton(onClick = { onAction(c, "start") }) { Icon(Icons.Rounded.PlayArrow, "Start", tint = Nx.Green) }
                                 }
                             }
-                        },
-                        onClick = { onOpenDetails(c) }
-                    )
-                    RowDivider()
+                        }
+                    }
                 }
             }
         }
-    }
-
-    menuFor?.let { c ->
-        val actions = buildList {
-            if (c.running) {
-                add(SheetAction("Restart", Icons.Rounded.RestartAlt, Nx.Cyan) { onAction(c, "restart") })
-                add(SheetAction("Stop", Icons.Rounded.Stop, Nx.Red) { onAction(c, "stop") })
-            } else {
-                add(SheetAction("Start", Icons.Rounded.PlayArrow, Nx.Green) { onAction(c, "start") })
-            }
-            add(SheetAction("Details and logs", Icons.Rounded.Info) { onOpenDetails(c) })
-        }
-        ActionSheet(title = c.name, subtitle = c.image, actions = actions, onDismiss = { menuFor = null })
     }
 
     if (details != null) {

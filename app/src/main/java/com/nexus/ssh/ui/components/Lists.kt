@@ -121,14 +121,15 @@ fun SectionHeader(text: String, modifier: Modifier = Modifier) {
     )
 }
 
-/** Flat tinted rounded-square icon, like the system Settings app. */
+/** Dark rounded-square icon holder with a coloured glyph (same look as the home icons). */
 @Composable
 fun IconBadge(icon: ImageVector, tint: Color, modifier: Modifier = Modifier, size: Dp = 40.dp) {
     Box(
         modifier
             .size(size)
             .clip(RoundedCornerShape(size * 0.3f))
-            .background(tint.copy(alpha = 0.16f)),
+            .background(Color(0xFF262A33))
+            .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(size * 0.3f)),
         contentAlignment = Alignment.Center
     ) {
         Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(size * 0.55f))

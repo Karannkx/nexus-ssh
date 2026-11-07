@@ -91,7 +91,10 @@ import com.nexus.ssh.ui.components.FloatingNavBar
 import com.nexus.ssh.ui.components.FloatingNavRail
 import com.nexus.ssh.ui.components.NavItemSpec
 import com.nexus.ssh.ui.components.NexusLoader
+import com.nexus.ssh.ui.screens.AboutScreen
 import com.nexus.ssh.ui.screens.AppsScreen
+import com.nexus.ssh.ui.screens.ProcessesScreen
+import com.nexus.ssh.ui.screens.SnippetsScreen
 import com.nexus.ssh.ui.screens.BrowserScreen
 import com.nexus.ssh.ui.screens.DockerScreen
 import com.nexus.ssh.ui.screens.FilesScreen
@@ -109,6 +112,7 @@ import com.nexus.ssh.ui.screens.ServicesScreen
 import com.nexus.ssh.ui.screens.SettingsScreen
 import com.nexus.ssh.ui.screens.TerminalScreen
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -174,7 +178,7 @@ class MainActivity : FragmentActivity() {
     }
 }
 
-private val TOP_ROUTES = setOf(Routes.HOME, Routes.SERVERS, Routes.APPS, Routes.SETTINGS)
+private val TOP_ROUTES = setOf(Routes.HOME, Routes.SERVERS, Routes.APPS, Routes.SETTINGS, Routes.ABOUT)
 private val WALLPAPER_ROUTES = setOf(Routes.HOME, Routes.SERVERS, Routes.APPS)
 
 private val TOP_NAV = listOf(
@@ -217,6 +221,7 @@ fun NexusApp(
     val services by vm.services.collectAsState()
     val logs by vm.logs.collectAsState()
     val webPorts by vm.webPorts.collectAsState()
+    val processes by vm.processes.collectAsState()
     val browserTarget by vm.browserTarget.collectAsState()
     val notices by vm.notices.collectAsState()
     val unread by vm.unreadNotices.collectAsState()
@@ -230,6 +235,7 @@ fun NexusApp(
     val appLock by prefs.appLock.collectAsState()
     val tileOrder by prefs.homeTileOrder.collectAsState()
     val bookmarks by prefs.webBookmarks.collectAsState()
+    val snippets by prefs.snippets.collectAsState()
 
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -366,13 +372,11 @@ fun NexusApp(
                                 connection = connection,
                                 telemetry = telemetry,
                                 unread = unread,
-                                icons = icons,
                                 tileOrder = tileOrder,
                                 onNavigate = { navigateTo(it) },
                                 onSearch = { showSearch = true },
                                 onNotifications = { vm.markNoticesRead(); showNotices = true },
-                                onSelectServer = { vm.selectServer(it.id) },
-                                onConnectServer = { vm.connectServer(it) },
+                                onConnect = connectSelected,
                                 onDisconnect = vm::disconnect,
                                 onAddServer = addServer,
                                 onReorder = { prefs.setHomeTileOrder(it) }
@@ -401,15 +405,7 @@ fun NexusApp(
                                 onManage = { navigateTo(Routes.SETTINGS) }
                             )
                         }
-                        composable(Routes.APPS) {
-                            AppsScreen(
-                                selected = selected,
-                                connection = connection,
-                                onConnect = connectSelected,
-                                onDisconnect = vm::disconnect,
-                                onNavigate = { navigateTo(it) }
-                            )
-                        }
+                        composable(Routes.APPS) { AppsScreen(onNavigate = { navigateTo(it) }) }
                         composable(Routes.SETTINGS) {
                             SettingsScreen(
                                 prefs = prefs,
@@ -428,8 +424,11 @@ fun NexusApp(
                                         scope.launch { snackbar.showSnackbar("Set up a fingerprint, face unlock or screen lock in Android settings first") }
                                     }
                                 },
-                                onOpenUrl = { uriHandler.openUri(it) }
+                                onOpenAbout = { navigateTo(Routes.ABOUT) }
                             )
+                        }
+                        composable(Routes.ABOUT) {
+                            AboutScreen(onBack = { navigateTo(Routes.SETTINGS) }, onOpenUrl = { uriHandler.openUri(it) })
                         }
                         composable(Routes.FILES) {
                             FilesScreen(
@@ -533,6 +532,36 @@ fun NexusApp(
                                 onConnect = connectSelected,
                                 onLoadSource = vm::loadLogs,
                                 onLoadFile = vm::loadLogFile
+                            )
+                        }
+                        composable(Routes.PROCESSES) {
+                            LaunchedEffect(isConnected) {
+                                while (isConnected) {
+                                    vm.refreshProcesses()
+                                    delay(4_000)
+                                }
+                            }
+                            ProcessesScreen(
+                                connected = isConnected,
+                                serverName = serverName,
+                                state = processes,
+                                onBack = goHome,
+                                onConnect = connectSelected,
+                                onRefresh = vm::refreshProcesses,
+                                onKill = { p, sig -> vm.killProcess(p, sig) }
+                            )
+                        }
+                        composable(Routes.SNIPPETS) {
+                            SnippetsScreen(
+                                snippets = snippets,
+                                connected = isConnected,
+                                onBack = goHome,
+                                onRun = { cmd ->
+                                    vm.sendTerminalInput(cmd + "\r")
+                                    navigateTo(Routes.TERMINAL)
+                                },
+                                onSave = { id, title, command -> prefs.saveSnippet(id, title, command) },
+                                onDelete = { prefs.removeSnippet(it) }
                             )
                         }
                         composable(Routes.BROWSER) {

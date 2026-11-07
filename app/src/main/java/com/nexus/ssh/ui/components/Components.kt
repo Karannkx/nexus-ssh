@@ -2,6 +2,7 @@ package com.nexus.ssh.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -61,6 +62,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.painterResource
+import com.nexus.ssh.R
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -105,24 +108,16 @@ fun SectionLabel(text: String, modifier: Modifier = Modifier) {
 
 @Composable
 fun StatusDot(color: Color, modifier: Modifier = Modifier, size: Dp = 10.dp) {
-    Box(
-        modifier
-            .size(size)
-            .shadow(6.dp, CircleShape, ambientColor = color, spotColor = color)
-            .background(color, CircleShape)
-    )
+    Box(modifier.size(size).background(color, CircleShape))
 }
 
 @Composable
 fun NexusLogo(modifier: Modifier = Modifier, size: Dp = 46.dp) {
-    Box(
-        modifier
-            .size(size)
-            .glass(RoundedCornerShape(size * 0.28f), fill = 0.55f),
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(PromptIcon, contentDescription = "Nexus SSH", tint = Color.White, modifier = Modifier.size(size * 0.62f))
-    }
+    Image(
+        painter = painterResource(R.drawable.logo_n),
+        contentDescription = "Nexus SSH",
+        modifier = modifier.size(size)
+    )
 }
 
 /** Dark rounded app tile with a label underneath (home quick-access grid). */
@@ -347,17 +342,17 @@ fun ServerStackIllustration(modifier: Modifier = Modifier) {
         val h = size.height
         val fw = w * 0.60f
         val dx = w * 0.20f
-        val dy = h * 0.10f
-        val sh = h * 0.19f
+        val dy = h * 0.12f
+        val sh = h * 0.27f
         val x0 = w * 0.04f
-        val gap = h * 0.025f
+        val gap = h * 0.03f
         // soft ground shadow
         drawOval(
             Brush.radialGradient(listOf(Color(0x66000000), Color.Transparent)),
             topLeft = Offset(x0, h * 0.86f),
             size = Size(fw + dx, h * 0.12f)
         )
-        for (i in 0 until 3) {
+        for (i in 0 until 2) {
             val y = h * 0.84f - (i + 1) * (sh + gap) + dy * 0.0f
             // top face
             val top = Path().apply {

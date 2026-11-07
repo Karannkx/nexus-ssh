@@ -53,6 +53,8 @@ import androidx.compose.ui.window.Dialog
 import com.nexus.ssh.AppNotice
 import com.nexus.ssh.core.database.AuthType
 import com.nexus.ssh.core.database.ServerEntity
+import com.nexus.ssh.ui.ALL_APPS
+import com.nexus.ssh.ui.AppEntry
 import com.nexus.ssh.ui.LocalAccent
 import com.nexus.ssh.ui.Nx
 import com.nexus.ssh.ui.ServerIconOptions
@@ -285,7 +287,7 @@ fun HostKeyDialog(
 fun SearchDialog(
     servers: List<ServerEntity>,
     icons: Map<Long, String>,
-    onTool: (ToolSpec) -> Unit,
+    onTool: (AppEntry) -> Unit,
     onServer: (ServerEntity) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -293,7 +295,7 @@ fun SearchDialog(
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
     val q = query.trim()
-    val tools = TOOLS.filter { q.isEmpty() || it.title.contains(q, true) || it.subtitle.contains(q, true) }
+    val tools = ALL_APPS.filter { q.isEmpty() || it.label.contains(q, true) || it.keywords.contains(q, true) }
     val matched = servers.filter { q.isEmpty() || it.name.contains(q, true) || it.hostname.contains(q, true) }
 
     Dialog(onDismissRequest = onDismiss) {
@@ -310,12 +312,15 @@ fun SearchDialog(
                 if (tools.isNotEmpty()) item { Text("TOOLS", color = Nx.Muted, fontSize = 11.sp, letterSpacing = 1.sp, modifier = Modifier.padding(6.dp)) }
                 items(tools, key = { "t" + it.route }) { t ->
                     Row(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { onTool(t) }.padding(10.dp),
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { onTool(t) }.padding(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(t.icon, null, tint = t.tint, modifier = Modifier.size(24.dp))
+                        Box(
+                            Modifier.size(44.dp).clip(RoundedCornerShape(13.dp)).background(Color(0xFF262A33)),
+                            contentAlignment = Alignment.Center
+                        ) { t.glyph() }
                         Spacer(Modifier.width(14.dp))
-                        Text(t.title, color = Color.White, fontSize = 15.sp)
+                        Text(t.label, color = Color.White, fontSize = 15.sp)
                     }
                 }
                 if (matched.isNotEmpty()) item { Text("SERVERS", color = Nx.Muted, fontSize = 11.sp, letterSpacing = 1.sp, modifier = Modifier.padding(6.dp)) }
