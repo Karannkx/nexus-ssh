@@ -225,7 +225,7 @@ Please include your Android version, device model, what you expected vs. what ha
 - **Geist Sans** is used for general UI text and controls.
 - **Geist Mono** is used for terminal output, IP addresses, paths and other technical values.
 - **Bricolage Grotesque** is reserved for display and screen headings so it adds personality without hurting dense UI readability.
-- **Phosphor Icons** are used for the server identity icon set and can be extended across screens; legacy Material glyphs remain only where a screen-specific symbol has not yet been migrated.
+- **Phosphor Icons** are integrated through the Android artifact `com.adamglin:phosphor-icon-android:1.0.0` (`com.adamglin.PhosphorIcons` API) for the primary navigation and server identity icon set; legacy Material glyphs remain only where a screen-specific symbol has not yet been migrated.
 - Font binaries are downloaded at build time from the upstream Google Fonts repository into generated Android resources, then bundled locally in the APK. No font is fetched at runtime.
 - See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for upstream sources and licenses.
 
@@ -251,3 +251,15 @@ Made with ❤️ by [Karannkx](https://github.com/Karannkx)
 ⭐ **If you find Nexus SSH useful, please star the repo!** ⭐
 
 </div>
+
+
+### CI troubleshooting: Phosphor Compose icons
+
+The Android target uses `com.adamglin:phosphor-icon-android:1.0.0`. Import the API as:
+
+```kotlin
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+```
+
+Do not import `com.adamglin.phosphoricons.PhosphorIcons`; that package path does not contain the top-level icon provider and causes `Unresolved reference: PhosphorIcons` during `compileDebugKotlin`. The CI preflight checks the artifact coordinate and imports before Gradle compilation.

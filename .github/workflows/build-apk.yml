@@ -49,7 +49,12 @@ jobs:
           test -f app/src/main/res/drawable-nodpi/bg_wallpaper.png
           test -f app/src/main/res/drawable-nodpi/ic_splash.png
           test -f app/src/main/java/com/nexus/ssh/MainActivity.kt
-          grep -q 'com.adamglin:phosphor-icon' app/build.gradle.kts
+          grep -q 'com.adamglin:phosphor-icon-android:1.0.0' app/build.gradle.kts
+          grep -q 'import com.adamglin.PhosphorIcons' app/src/main/java/com/nexus/ssh/MainActivity.kt
+          grep -q 'import com.adamglin.phosphoricons.Regular' app/src/main/java/com/nexus/ssh/MainActivity.kt
+          grep -q 'import com.adamglin.PhosphorIcons' app/src/main/java/com/nexus/ssh/ui/Icons.kt
+          grep -q 'import com.adamglin.phosphoricons.Regular' app/src/main/java/com/nexus/ssh/ui/Icons.kt
+          ! grep -R 'com.adamglin.phosphoricons.PhosphorIcons' app/src/main/java
           grep -q 'downloadDesignFonts' app/build.gradle.kts
 
       - name: Run unit tests and Android lint

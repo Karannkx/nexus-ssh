@@ -71,7 +71,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.adamglin.phosphoricons.PhosphorIcons
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
 import com.nexus.ssh.core.database.ServerEntity
 import com.nexus.ssh.core.prefs.WebBookmark
 import com.nexus.ssh.core.ssh.ConnectionState

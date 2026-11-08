@@ -1,6 +1,7 @@
 package com.nexus.ssh.ui
 
-import com.adamglin.phosphoricons.PhosphorIcons
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.path
