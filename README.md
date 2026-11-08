@@ -115,7 +115,7 @@ git push origin v1.0.1
 
 Open the **Actions** tab → latest workflow run → **Artifacts** to download the APK and test/build logs.
 
-**Android SDK note:** CI installs only `platform-tools`. The old standalone SDK package named `tools` has been removed from Google's SDK repository; command-line tools are installed by the setup action, and Android Gradle Plugin resolves the required platform/build-tools packages.
+**Kotlin DSL font download:** The font task imports `URL`, `HttpURLConnection` and `InputStream` explicitly and uses a typed connection, avoiding Gradle Kotlin DSL's `java` accessor shadowing `java.net` and the resulting unresolved references.\n\n**Android SDK note:** CI installs only `platform-tools`. The old standalone SDK package named `tools` has been removed from Google's SDK repository; command-line tools are installed by the setup action, and Android Gradle Plugin resolves the required platform/build-tools packages.
 
 **Signing note:** The current `release` build type still uses the Android debug signing configuration for test distribution. Configure a private upload keystore through GitHub Secrets before publishing to Google Play. Never commit a keystore or passwords to the repository.
 

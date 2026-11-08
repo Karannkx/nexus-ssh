@@ -1,3 +1,7 @@
+import java.io.InputStream
+import java.net.HttpURLConnection
+import java.net.URL
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -21,11 +25,13 @@ val downloadDesignFonts by tasks.registering {
             val target = root.resolve(relative)
             if (!target.exists() || target.length() < 10_000L) {
                 target.parentFile.mkdirs()
-                val connection = java.net.URL(source).openConnection().apply {
-                    connectTimeout = 20_000
-                    readTimeout = 60_000
+                val connection: HttpURLConnection = URL(source).openConnection() as HttpURLConnection
+                connection.connectTimeout = 20_000
+                connection.readTimeout = 60_000
+                connection.inputStream.use { input: InputStream ->
+                    target.outputStream().use { output -> input.copyTo(output) }
                 }
-                connection.getInputStream().use { input -> target.outputStream().use(input::copyTo) }
+                connection.disconnect()
                 check(target.length() > 10_000L) { "Downloaded font is unexpectedly small: $relative" }
                 val signature = target.inputStream().use { input -> ByteArray(4).also { input.read(it) } }
                 check(signature.contentEquals(byteArrayOf(0, 1, 0, 0)) || signature.contentEquals("OTTO".toByteArray())) {
