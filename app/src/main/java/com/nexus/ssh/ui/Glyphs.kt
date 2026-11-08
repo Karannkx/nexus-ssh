@@ -67,18 +67,18 @@ class AppEntry(
 
 val ALL_APPS: List<AppEntry> = listOf(
     AppEntry(Routes.FILES, "Files", "sftp folders upload download edit") { FolderGlyph(Modifier.size(36.dp)) },
-    AppEntry(Routes.TERMINAL, "Terminal", "shell ssh console command") { GlyphIcon(PromptIcon, Color.White) },
+    AppEntry(Routes.TERMINAL, "Terminal", "shell ssh console command") { GlyphIcon(PromptIcon, Nx.Green) },
     AppEntry(Routes.MONITOR, "Monitor", "cpu memory disk network usage") { GlyphIcon(PulseIcon, Nx.Green) },
     AppEntry(Routes.DOCKER, "Docker", "containers images") { WhaleGlyph(Modifier.size(36.dp)) },
     AppEntry(Routes.SERVICES, "Services", "systemd units daemons") { GlyphIcon(Icons.Rounded.Hub, Nx.Purple) },
-    AppEntry(Routes.LOGS, "Logs", "journal syslog kernel") { GlyphIcon(DocIcon, Color.White) },
+    AppEntry(Routes.LOGS, "Logs", "journal syslog kernel") { GlyphIcon(DocIcon, Nx.Green) },
     AppEntry(Routes.BROWSER, "Browser", "web apps http tunnel gui") { GlyphIcon(Icons.Rounded.Language, Color(0xFF4CA6FF)) },
     AppEntry(Routes.PROCESSES, "Processes", "top ps kill task manager") { GlyphIcon(Icons.Rounded.Memory, Nx.Amber) },
     AppEntry(Routes.SNIPPETS, "Snippets", "saved commands scripts shortcuts") { GlyphIcon(Icons.Rounded.Code, Nx.Magenta) },
-    AppEntry(Routes.SERVERS, "Servers", "hosts connections manage") { GlyphIcon(ServersIcon, Color.White) },
+    AppEntry(Routes.SERVERS, "Servers", "hosts connections manage") { GlyphIcon(ServersIcon, Nx.Green) },
     AppEntry(Routes.SETTINGS, "Settings", "theme security preferences") { GlyphIcon(Icons.Rounded.Settings, Color(0xFFB8C0CC)) },
     AppEntry(Routes.ABOUT, "About", "developer version licence") { GlyphIcon(Icons.Rounded.Info, Nx.Cyan) },
-    AppEntry(Routes.APPS, "Apps", "all applications launcher") { GlyphIcon(GridIcon, Color.White) }
+    AppEntry(Routes.APPS, "Apps", "all applications launcher") { GlyphIcon(GridIcon, Nx.Green) }
 )
 
 val HOME_DEFAULT = listOf(

@@ -97,7 +97,7 @@ fun ServicesScreen(
     Column(Modifier.fillMaxSize()) {
         ScreenTopBar("Services", onBack, subtitle = serverName.ifBlank { null }) {
             IconButton(onClick = onRefresh, enabled = connected) {
-                Icon(Icons.Rounded.Refresh, contentDescription = "Refresh", tint = if (connected) Color.White else Nx.Faint)
+                Icon(Icons.Rounded.Refresh, contentDescription = "Refresh", tint = if (connected) Nx.Green else Nx.Faint)
             }
         }
         if (!connected) {
@@ -127,13 +127,13 @@ fun ServicesScreen(
             FILTERS.forEachIndexed { i, name ->
                 Text(
                     name,
-                    color = if (filter == i) Color(0xFF0B0D12) else Nx.Muted,
+                    color = if (filter == i) Color.White else Nx.Muted,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier
                         .heightIn(min = 38.dp)
                         .clip(RoundedCornerShape(14.dp))
-                        .background(if (filter == i) Color.White else Color.White.copy(alpha = 0.08f))
+                        .background(if (filter == i) LocalAccent.current else Nx.SurfaceHigh)
                         .clickable { filter = i }
                         .padding(horizontal = 16.dp, vertical = 9.dp)
                 )
@@ -164,7 +164,7 @@ fun ServicesScreen(
                             StatusDot(tint, size = 9.dp)
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
-                                Text(u.name.removeSuffix(".service"), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(u.name.removeSuffix(".service"), color = Nx.Text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     StatusBadge(
                                         when {

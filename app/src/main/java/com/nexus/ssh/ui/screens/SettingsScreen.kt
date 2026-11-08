@@ -92,8 +92,8 @@ private fun SwitchRow(icon: ImageVector, tint: Color, title: String, subtitle: S
                     checkedThumbColor = Color.White,
                     checkedTrackColor = accent,
                     uncheckedThumbColor = Nx.Muted,
-                    uncheckedTrackColor = Color.White.copy(alpha = 0.10f),
-                    uncheckedBorderColor = Color.White.copy(alpha = 0.18f)
+                    uncheckedTrackColor = Nx.Border.copy(alpha = 0.8f),
+                    uncheckedBorderColor = Nx.Border
                 )
             )
         },
@@ -130,7 +130,7 @@ fun SettingsScreen(
             .statusBarsPadding()
             .padding(horizontal = 18.dp)
     ) {
-        Text("Settings", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 8.dp, top = 22.dp))
+        Text("Settings", color = Nx.Text, fontSize = 32.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 8.dp, top = 22.dp))
 
         SectionHeader("Profile")
         GroupSurface {
@@ -156,7 +156,7 @@ fun SettingsScreen(
             Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconBadge(Icons.Rounded.Palette, Nx.Magenta)
                 Spacer(Modifier.size(14.dp))
-                Text("Accent colour", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+                Text("Accent colour", color = Nx.Text, fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     AccentOptions.forEach { key ->
                         val c = accentColor(key)
@@ -165,11 +165,11 @@ fun SettingsScreen(
                                 .size(30.dp)
                                 .clip(CircleShape)
                                 .background(c)
-                                .border(if (key == accentKey) 2.5.dp else 0.dp, Color.White, CircleShape)
+                                .border(if (key == accentKey) 2.5.dp else 0.dp, Nx.Green, CircleShape)
                                 .clickable(onClickLabel = key) { prefs.setAccent(key) },
                             contentAlignment = Alignment.Center
                         ) {
-                            if (key == accentKey) Icon(Icons.Rounded.Check, contentDescription = "Selected", tint = Color.Black, modifier = Modifier.size(16.dp))
+                            if (key == accentKey) Icon(Icons.Rounded.Check, contentDescription = "Selected", tint = Color.White, modifier = Modifier.size(16.dp))
                         }
                     }
                 }
@@ -179,7 +179,7 @@ fun SettingsScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconBadge(Icons.Rounded.TextFields, Nx.Cyan)
                     Spacer(Modifier.size(14.dp))
-                    Text("Terminal font size", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+                    Text("Terminal font size", color = Nx.Text, fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
                     Text("$fontSize sp", color = Nx.Muted, fontSize = 14.sp)
                 }
                 Slider(
@@ -187,7 +187,7 @@ fun SettingsScreen(
                     onValueChange = { prefs.setTerminalFontSize(it.toInt()) },
                     valueRange = 10f..18f,
                     steps = 7,
-                    colors = SliderDefaults.colors(thumbColor = accent, activeTrackColor = accent, inactiveTrackColor = Color.White.copy(alpha = 0.12f))
+                    colors = SliderDefaults.colors(thumbColor = accent, activeTrackColor = accent, inactiveTrackColor = Nx.Border)
                 )
             }
             RowDivider()
@@ -195,20 +195,20 @@ fun SettingsScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconBadge(Icons.Rounded.Speed, Nx.Green)
                     Spacer(Modifier.size(14.dp))
-                    Text("Monitor refresh", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+                    Text("Monitor refresh", color = Nx.Text, fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
                 }
                 Spacer(Modifier.height(12.dp))
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf(3, 5, 10, 30).forEach { s ->
                         Text(
                             "$s s",
-                            color = if (refresh == s) Color(0xFF0B0D12) else Nx.Muted,
+                            color = if (refresh == s) Color.White else Nx.Muted,
                             fontWeight = FontWeight.Medium,
                             fontSize = 14.sp,
                             modifier = Modifier
                                 .heightIn(min = 38.dp)
                                 .clip(RoundedCornerShape(14.dp))
-                                .background(if (refresh == s) Color.White else Color.White.copy(alpha = 0.08f))
+                                .background(if (refresh == s) accent else Nx.SurfaceHigh)
                                 .clickable { prefs.setRefreshSeconds(s) }
                                 .padding(horizontal = 18.dp, vertical = 9.dp)
                         )

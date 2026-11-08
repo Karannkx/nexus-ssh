@@ -1,5 +1,7 @@
 package com.nexus.ssh.ui.screens
 
+import com.nexus.ssh.ui.GeistMonoFamily
+
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -75,7 +77,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -190,14 +191,14 @@ fun FilesScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = Color.White)
+                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = Nx.Text)
                 }
                 val spec = serverIconSpec(serverIconKey)
                 Icon(spec.icon, contentDescription = null, tint = spec.tint, modifier = Modifier.size(22.dp))
                 Spacer(Modifier.width(10.dp))
                 Text(
                     serverName.ifBlank { "Files" },
-                    color = Color.White,
+                    color = Nx.Text,
                     fontSize = 21.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f),
@@ -205,13 +206,13 @@ fun FilesScreen(
                     overflow = TextOverflow.Ellipsis
                 )
                 IconButton(onClick = { gridMode = !gridMode }) {
-                    Icon(if (gridMode) ListIcon else GridIcon, contentDescription = "Toggle view", tint = Color.White)
+                    Icon(if (gridMode) ListIcon else GridIcon, contentDescription = "Toggle view", tint = Nx.Text)
                 }
                 IconButton(onClick = { searching = !searching; if (!searching) query = "" }) {
-                    Icon(Icons.Rounded.Search, contentDescription = "Search", tint = Color.White)
+                    Icon(Icons.Rounded.Search, contentDescription = "Search", tint = Nx.Text)
                 }
                 IconButton(onClick = { overflow = true }) {
-                    Icon(Icons.Rounded.MoreVert, contentDescription = "More", tint = Color.White)
+                    Icon(Icons.Rounded.MoreVert, contentDescription = "More", tint = Nx.Text)
                 }
             }
 
@@ -258,7 +259,7 @@ fun FilesScreen(
                             Icon(Icons.Rounded.ChevronRight, null, tint = Nx.Faint, modifier = Modifier.size(16.dp))
                             Text(
                                 part,
-                                color = if (i == parts.lastIndex) Color.White else Nx.Muted,
+                                color = if (i == parts.lastIndex) Nx.Text else Nx.Muted,
                                 fontWeight = if (i == parts.lastIndex) FontWeight.SemiBold else FontWeight.Normal,
                                 fontSize = 14.sp,
                                 maxLines = 1,
@@ -309,7 +310,7 @@ fun FilesScreen(
                                     Spacer(Modifier.height(6.dp))
                                     Text(
                                         item.name,
-                                        color = Color.White,
+                                        color = Nx.Text,
                                         fontSize = 14.sp,
                                         maxLines = 2,
                                         overflow = TextOverflow.Ellipsis,
@@ -331,12 +332,12 @@ fun FilesScreen(
                                     if (item.isDirectory) BigFolderIcon(Modifier.size(40.dp)) else BigFileIcon(Modifier.size(40.dp))
                                     Spacer(Modifier.width(14.dp))
                                     Column(Modifier.weight(1f)) {
-                                        Text(item.name, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        Text(item.name, color = Nx.Text, fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                         Text(
                                             item.permissions + "   " + (if (item.isDirectory) "" else humanSize(item.size) + "   ") + dateFormat.format(Date(item.mtime)),
                                             color = Nx.Muted,
                                             fontSize = 11.sp,
-                                            fontFamily = FontFamily.Monospace
+                                            fontFamily = GeistMonoFamily
                                         )
                                     }
                                     IconButton(onClick = { actionsFor = item }) {
@@ -367,7 +368,7 @@ fun FilesScreen(
                             .clickable(onClickLabel = "Add") { fabMenu = true },
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Rounded.Add, contentDescription = "Add", tint = Color(0xFF0B0D12), modifier = Modifier.size(30.dp))
+                        Icon(Icons.Rounded.Add, contentDescription = "Add", tint = Color.White, modifier = Modifier.size(30.dp))
                     }
                 }
             }
@@ -469,14 +470,14 @@ private fun FileEditorDialog(file: OpenFile, onSave: (String) -> Unit, onClose: 
                     Text(
                         file.path,
                         modifier = Modifier.weight(1f),
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = GeistMonoFamily,
                         fontSize = 12.sp,
                         color = LocalAccent.current,
                         maxLines = 2
                     )
                     TextButton(onClick = onClose) { Text("Close", color = Nx.Muted) }
                     Button(onClick = { onSave(text) }, colors = ButtonDefaults.buttonColors(containerColor = LocalAccent.current)) {
-                        Text("Save", color = Color(0xFF04101C), fontWeight = FontWeight.Bold)
+                        Text("Save", color = Color.White, fontWeight = FontWeight.Bold)
                     }
                 }
                 Spacer(Modifier.height(8.dp))
@@ -485,7 +486,7 @@ private fun FileEditorDialog(file: OpenFile, onSave: (String) -> Unit, onClose: 
                     onValueChange = { text = it },
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                     colors = nexusFieldColors(),
-                    textStyle = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = Color.White)
+                    textStyle = TextStyle(fontFamily = GeistMonoFamily, fontSize = 12.sp, color = Nx.Text)
                 )
             }
         }

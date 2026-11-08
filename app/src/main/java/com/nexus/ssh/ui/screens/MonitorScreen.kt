@@ -96,8 +96,8 @@ private fun DropPill(label: String, modifier: Modifier = Modifier, onClick: () -
             .padding(horizontal = 16.dp, vertical = 15.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(label, color = Color.White, fontSize = 14.sp, modifier = Modifier.weight(1f), maxLines = 1)
-        Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null, tint = Color.White)
+        Text(label, color = Nx.Text, fontSize = 14.sp, modifier = Modifier.weight(1f), maxLines = 1)
+        Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null, tint = Nx.Text)
     }
 }
 
@@ -127,7 +127,7 @@ private fun MetricCard(
             Text(label, color = Nx.Muted, fontSize = 13.sp, maxLines = 1)
         }
         Spacer(Modifier.height(8.dp))
-        Text(value, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        Text(value, color = Nx.Text, fontSize = 24.sp, fontWeight = FontWeight.Bold, maxLines = 1)
         if (sub != null) Text(sub, color = Nx.Muted, fontSize = 12.sp)
         if (spark != null) {
             Spacer(Modifier.height(6.dp))
@@ -161,7 +161,7 @@ fun MonitorScreen(
     Column(Modifier.fillMaxSize()) {
         ScreenTopBar("System Monitor", onBack) {
             IconButton(onClick = onRefresh, enabled = connected) {
-                Icon(Icons.Rounded.Refresh, contentDescription = "Refresh", tint = if (connected) Color.White else Nx.Faint)
+                Icon(Icons.Rounded.Refresh, contentDescription = "Refresh", tint = if (connected) Nx.Green else Nx.Faint)
             }
         }
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
@@ -252,13 +252,13 @@ fun MonitorScreen(
                         .glass(RoundedCornerShape(24.dp), fill = 0.82f)
                         .padding(16.dp)
                 ) {
-                    Text("Resource Usage", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Resource Usage", color = Nx.Text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(12.dp))
                     // segmented selector
                     Row(
                         Modifier
                             .clip(RoundedCornerShape(16.dp))
-                            .background(Color.White.copy(alpha = 0.06f))
+                            .background(Nx.SurfaceHigh)
                             .padding(4.dp)
                     ) {
                         listOf("CPU", "Memory", "Disk", "Network").forEachIndexed { i, name ->
@@ -266,13 +266,13 @@ fun MonitorScreen(
                             Box(
                                 Modifier
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(if (sel) Color.White else Color.Transparent)
+                                    .background(if (sel) LocalAccent.current else Color.Transparent)
                                     .clickable { metric = i }
                                     .padding(horizontal = 14.dp, vertical = 8.dp)
                             ) {
                                 Text(
                                     name,
-                                    color = if (sel) Color(0xFF0B0D12) else Nx.Muted,
+                                    color = if (sel) Color.White else Nx.Muted,
                                     fontSize = 13.sp,
                                     fontWeight = if (sel) FontWeight.SemiBold else FontWeight.Normal
                                 )
@@ -308,7 +308,7 @@ fun MonitorScreen(
                 Spacer(Modifier.height(16.dp))
                 if (t != null) {
                     Column(Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp), fill = 0.82f).padding(16.dp)) {
-                        Text("System", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                        Text("System", color = Nx.Text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
                         Spacer(Modifier.height(8.dp))
                         InfoLine("Hostname", t.hostname)
                         InfoLine("OS", t.os)
@@ -358,6 +358,6 @@ private fun InfoLine(label: String, value: String) {
     Row(Modifier.fillMaxWidth().padding(vertical = 5.dp), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(label, color = Nx.Muted, fontSize = 13.sp)
         Spacer(Modifier.width(16.dp))
-        Text(value, color = Color.White, fontSize = 13.sp, maxLines = 2, modifier = Modifier.weight(1f, fill = false))
+        Text(value, color = Nx.Text, fontSize = 13.sp, maxLines = 2, modifier = Modifier.weight(1f, fill = false))
     }
 }

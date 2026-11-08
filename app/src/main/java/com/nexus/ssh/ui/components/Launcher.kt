@@ -61,7 +61,7 @@ import com.nexus.ssh.ui.LocalAccent
 import com.nexus.ssh.ui.Nx
 import kotlin.math.roundToInt
 
-/** App icon: dark rounded tile with a coloured glyph (no glow), label underneath. */
+/** Refined light launcher tile with a soft surface and restrained border. */
 @Composable
 fun AppTile(label: String, dragging: Boolean, modifier: Modifier = Modifier, glyph: @Composable () -> Unit) {
     val shape = RoundedCornerShape(20.dp)
@@ -69,9 +69,9 @@ fun AppTile(label: String, dragging: Boolean, modifier: Modifier = Modifier, gly
         Box(
             Modifier
                 .size(64.dp)
-                .shadow(if (dragging) 14.dp else 0.dp, shape, ambientColor = Color.Black, spotColor = Color.Black)
-                .background(Brush.verticalGradient(listOf(Color(0xFF2A2E38), Color(0xFF1B1E26))), shape)
-                .border(1.dp, Color.White.copy(alpha = 0.10f), shape),
+                .shadow(if (dragging) 14.dp else 5.dp, shape, ambientColor = Color(0x221C6B3B), spotColor = Color(0x221C6B3B))
+                .background(Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0xFFF0F4ED))), shape)
+                .border(1.dp, Color(0xFFE1E9DF), shape),
             contentAlignment = Alignment.Center
         ) {
             glyph()
@@ -79,7 +79,7 @@ fun AppTile(label: String, dragging: Boolean, modifier: Modifier = Modifier, gly
         Spacer(Modifier.height(8.dp))
         Text(
             label,
-            color = Color.White,
+            color = Nx.Text,
             fontSize = 12.5.sp,
             fontWeight = FontWeight.Medium,
             maxLines = 1,

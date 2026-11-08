@@ -1,5 +1,7 @@
 package com.nexus.ssh.ui.screens
 
+import com.nexus.ssh.ui.GeistMonoFamily
+
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -64,7 +66,6 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -186,18 +187,18 @@ fun TerminalScreen(
     Column(Modifier.fillMaxSize()) {
         ScreenTopBar("Terminal", onBack, subtitle = serverName.ifBlank { null }) {
             IconButton(onClick = { showKeyboard() }, enabled = connected) {
-                Icon(Icons.Rounded.Keyboard, contentDescription = "Show keyboard", tint = if (connected) Color.White else Nx.Faint)
+                Icon(Icons.Rounded.Keyboard, contentDescription = "Show keyboard", tint = if (connected) Nx.Green else Nx.Faint)
             }
             IconButton(
                 onClick = { clipboard.getText()?.text?.let { send(it.replace("\r\n", "\n")) } },
                 enabled = connected
-            ) { Icon(Icons.Rounded.ContentPaste, contentDescription = "Paste", tint = if (connected) Color.White else Nx.Faint) }
+            ) { Icon(Icons.Rounded.ContentPaste, contentDescription = "Paste", tint = if (connected) Nx.Green else Nx.Faint) }
             IconButton(
                 onClick = { clipboard.setText(AnnotatedString(lines.joinToString("\n") { it.trimEnd() }.trimEnd())) },
                 enabled = lines.isNotEmpty()
             ) { Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy output", tint = if (lines.isNotEmpty()) Color.White else Nx.Faint) }
             IconButton(onClick = onClear, enabled = connected) {
-                Icon(Icons.Rounded.DeleteSweep, contentDescription = "Clear", tint = if (connected) Color.White else Nx.Faint)
+                Icon(Icons.Rounded.DeleteSweep, contentDescription = "Clear", tint = if (connected) Nx.Green else Nx.Faint)
             }
         }
 
@@ -221,15 +222,15 @@ fun TerminalScreen(
                         Modifier
                             .heightIn(min = 40.dp)
                             .clip(RoundedCornerShape(14.dp))
-                            .background(if (sel) Color.White else Color.White.copy(alpha = 0.08f))
+                            .background(if (sel) LocalAccent.current else Nx.SurfaceHigh)
                             .clickable { onSelectTab(tab.id) }
                             .padding(start = 14.dp, end = if (tabs.size > 1) 4.dp else 14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(tab.title, color = if (sel) Color(0xFF0B0D12) else Nx.Muted, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        Text(tab.title, color = if (sel) Color.White else Nx.Muted, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                         if (tabs.size > 1) {
                             IconButton(onClick = { onCloseTab(tab.id) }, modifier = Modifier.size(34.dp)) {
-                                Icon(Icons.Rounded.Close, "Close tab", tint = if (sel) Color(0xFF0B0D12) else Nx.Muted, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Rounded.Close, "Close tab", tint = if (sel) Color.White else Nx.Muted, modifier = Modifier.size(16.dp))
                             }
                         }
                     }
@@ -248,7 +249,7 @@ fun TerminalScreen(
                 .padding(horizontal = 10.dp, vertical = 6.dp)
                 .clip(RoundedCornerShape(18.dp))
                 .background(Nx.Terminal.copy(alpha = 0.94f))
-                .border(0.5.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(18.dp))
+                .border(0.5.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(18.dp))
                 .pointerInput(Unit) { detectTapGestures(onTap = { showKeyboard() }) }
         ) {
             val cols = ((maxWidth.value - 24f) / (fontSize * 0.62f)).toInt().coerceIn(20, 300)
@@ -263,7 +264,7 @@ fun TerminalScreen(
                         Text(
                             text = line.ifEmpty { " " },
                             color = Color(0xFFE2E8F0),
-                            fontFamily = FontFamily.Monospace,
+                            fontFamily = GeistMonoFamily,
                             fontSize = fontSize.sp,
                             lineHeight = (fontSize * 1.35f).sp
                         )
@@ -323,7 +324,7 @@ private fun CursorLine(line: String, cursor: Int, fontSize: Int) {
     Text(
         text = text,
         color = Color(0xFFE2E8F0),
-        fontFamily = FontFamily.Monospace,
+        fontFamily = GeistMonoFamily,
         fontSize = fontSize.sp,
         lineHeight = (fontSize * 1.35f).sp
     )
@@ -374,7 +375,7 @@ private fun KeyButton(label: String, active: Boolean, enabled: Boolean, onClick:
             .heightIn(min = 42.dp)
             .widthIn(min = 46.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(if (active) accent else Color.White.copy(alpha = 0.09f))
+            .background(if (active) accent else Color(0xFF17251F))
             .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = 12.dp),
         contentAlignment = Alignment.Center
@@ -382,13 +383,13 @@ private fun KeyButton(label: String, active: Boolean, enabled: Boolean, onClick:
         Text(
             label,
             color = when {
-                active -> Color(0xFF04101C)
+                active -> Color.White
                 enabled -> Color.White
                 else -> Nx.Faint
             },
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
-            fontFamily = FontFamily.Monospace
+            fontFamily = GeistMonoFamily
         )
     }
 }

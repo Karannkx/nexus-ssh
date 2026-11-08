@@ -20,6 +20,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -33,10 +34,6 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Folder
-import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
@@ -63,6 +60,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
@@ -73,6 +71,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.adamglin.phosphoricons.PhosphorIcons
 import com.nexus.ssh.core.database.ServerEntity
 import com.nexus.ssh.core.prefs.WebBookmark
 import com.nexus.ssh.core.ssh.ConnectionState
@@ -128,8 +127,8 @@ class MainActivity : FragmentActivity() {
         splash.setKeepOnScreenCondition { !vm.serversLoaded.value && SystemClock.uptimeMillis() - started < 2500 }
 
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(AndroidColor.TRANSPARENT),
-            navigationBarStyle = SystemBarStyle.dark(AndroidColor.TRANSPARENT)
+            statusBarStyle = SystemBarStyle.light(AndroidColor.TRANSPARENT, AndroidColor.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.light(AndroidColor.TRANSPARENT, AndroidColor.TRANSPARENT)
         )
         if (Build.VERSION.SDK_INT >= 29) window.isNavigationBarContrastEnforced = false
 
@@ -179,19 +178,19 @@ class MainActivity : FragmentActivity() {
 }
 
 private val TOP_ROUTES = setOf(Routes.HOME, Routes.SERVERS, Routes.APPS, Routes.SETTINGS, Routes.ABOUT)
-private val WALLPAPER_ROUTES = setOf(Routes.HOME, Routes.SERVERS, Routes.APPS)
+private val WALLPAPER_ROUTES = setOf(Routes.HOME, Routes.SERVERS, Routes.APPS, Routes.SETTINGS)
 
 private val TOP_NAV = listOf(
-    NavItemSpec(Routes.HOME, Icons.Rounded.Home, "Home"),
+    NavItemSpec(Routes.HOME, PhosphorIcons.Regular.House, "Home"),
     NavItemSpec(Routes.SERVERS, ServersIcon, "Servers"),
     NavItemSpec(Routes.APPS, GridIcon, "Apps"),
-    NavItemSpec(Routes.SETTINGS, Icons.Rounded.Settings, "Settings")
+    NavItemSpec(Routes.SETTINGS, PhosphorIcons.Regular.Gear, "Settings")
 )
 
 private val TOOL_NAV = listOf(
-    NavItemSpec(Routes.HOME, Icons.Rounded.Home, "Home"),
+    NavItemSpec(Routes.HOME, PhosphorIcons.Regular.House, "Home"),
     NavItemSpec(Routes.SERVERS, ServersIcon, "Servers"),
-    NavItemSpec(Routes.FILES, Icons.Rounded.Folder, "Files"),
+    NavItemSpec(Routes.FILES, PhosphorIcons.Regular.Folder, "Files"),
     NavItemSpec(Routes.MONITOR, PulseIcon, "Monitor"),
     NavItemSpec(Routes.DOCKER, CubeIcon, "Docker")
 )
@@ -335,7 +334,7 @@ fun NexusApp(
                         snackbarData = data,
                         shape = RoundedCornerShape(16.dp),
                         containerColor = Nx.SurfaceHigh,
-                        contentColor = Color.White
+                        contentColor = Nx.Text
                     )
                 }
             },
@@ -650,7 +649,18 @@ fun NexusApp(
         }
 
         if (!loaded) {
-            Box(Modifier.fillMaxSize().background(Nx.Bg), contentAlignment = Alignment.Center) { NexusLoader() }
+            Box(
+                Modifier.fillMaxSize().background(Nx.Bg),
+                contentAlignment = Alignment.Center
+            ) {
+                NexusBackdrop(wallpaper = true)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    NexusLoader(size = 92.dp)
+                    androidx.compose.foundation.layout.Spacer(Modifier.height(22.dp))
+                    Text("Nexus SSH", color = Nx.Text, fontSize = 24.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                    Text("Preparing your workspace…", color = Nx.Muted, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
+                }
+            }
         }
 
         if (locked && appLock) {

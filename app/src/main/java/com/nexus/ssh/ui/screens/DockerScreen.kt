@@ -1,5 +1,7 @@
 package com.nexus.ssh.ui.screens
 
+import com.nexus.ssh.ui.GeistMonoFamily
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -44,7 +46,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -99,7 +100,7 @@ fun DockerScreen(
     Column(Modifier.fillMaxSize()) {
         ScreenTopBar("Docker", onBack, subtitle = serverName.ifBlank { null }) {
             IconButton(onClick = onRefresh, enabled = connected) {
-                Icon(Icons.Rounded.Refresh, contentDescription = "Refresh", tint = if (connected) Color.White else Nx.Faint)
+                Icon(Icons.Rounded.Refresh, contentDescription = "Refresh", tint = if (connected) Nx.Green else Nx.Faint)
             }
         }
         if (!connected) {
@@ -151,12 +152,12 @@ fun DockerScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 StatusDot(tint, size = 9.dp)
                                 Spacer(Modifier.width(10.dp))
-                                Text(c.name, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, modifier = Modifier.weight(1f), overflow = TextOverflow.Ellipsis)
+                                Text(c.name, color = Nx.Text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, modifier = Modifier.weight(1f), overflow = TextOverflow.Ellipsis)
                                 StatusBadge(c.state.replaceFirstChar { it.uppercase() }, tint)
                                 Spacer(Modifier.width(10.dp))
                             }
                             Spacer(Modifier.height(4.dp))
-                            Text(c.image, color = Nx.Muted, fontSize = 12.sp, fontFamily = FontFamily.Monospace, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(c.image, color = Nx.Muted, fontSize = 12.sp, fontFamily = GeistMonoFamily, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(c.status, color = Nx.Muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                                 if (c.running) {
@@ -183,18 +184,18 @@ fun DockerScreen(
         }
         ModalBottomSheet(onDismissRequest = onCloseDetails, containerColor = Nx.SurfaceHigh) {
             Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 24.dp).navigationBarsPadding()) {
-                Text(details.container.name, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                Text(details.container.image, color = Nx.Muted, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
+                Text(details.container.name, color = Nx.Text, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(details.container.image, color = Nx.Muted, fontSize = 12.sp, fontFamily = GeistMonoFamily)
                 Spacer(Modifier.height(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("Info", "Logs").forEachIndexed { i, name ->
                         Text(
                             name,
-                            color = if (tab == i) Color(0xFF0B0D12) else Nx.Muted,
+                            color = if (tab == i) Color.White else Nx.Muted,
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(if (tab == i) Color.White else Color.White.copy(alpha = 0.08f))
+                                .background(if (tab == i) LocalAccent.current else Nx.SurfaceHigh)
                                 .clickable { tab = i }
                                 .padding(horizontal = 18.dp, vertical = 9.dp)
                         )
@@ -228,7 +229,7 @@ fun DockerScreen(
                             details.info.forEach { (k, v) ->
                                 Row(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
                                     Text(k, color = Nx.Muted, fontSize = 13.sp, modifier = Modifier.width(110.dp))
-                                    Text(v, color = Color.White, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                                    Text(v, color = Nx.Text, fontSize = 13.sp, modifier = Modifier.weight(1f))
                                 }
                             }
                         }
@@ -245,7 +246,7 @@ fun DockerScreen(
                             Text(
                                 details.logs.ifBlank { if (details.loading) "Loading…" else "No log output." },
                                 color = Color(0xFFE2E8F0),
-                                fontFamily = FontFamily.Monospace,
+                                fontFamily = GeistMonoFamily,
                                 fontSize = 11.sp
                             )
                         }

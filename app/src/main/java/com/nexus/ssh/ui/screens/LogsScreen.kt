@@ -1,5 +1,7 @@
 package com.nexus.ssh.ui.screens
 
+import com.nexus.ssh.ui.GeistMonoFamily
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -34,7 +36,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -81,7 +82,7 @@ fun LogsScreen(
             IconButton(
                 onClick = { if (state.source != null) onLoadSource(state.source) else onLoadFile(path) },
                 enabled = connected
-            ) { Icon(Icons.Rounded.Refresh, contentDescription = "Refresh", tint = if (connected) Color.White else Nx.Faint) }
+            ) { Icon(Icons.Rounded.Refresh, contentDescription = "Refresh", tint = if (connected) Nx.Green else Nx.Faint) }
         }
         if (!connected) {
             EmptyState(
@@ -102,12 +103,12 @@ fun LogsScreen(
                 val sel = state.source == src
                 Text(
                     src.label,
-                    color = if (sel) Color(0xFF0B0D12) else Nx.Muted,
+                    color = if (sel) Color.White else Nx.Muted,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
-                        .background(if (sel) Color.White else Color.White.copy(alpha = 0.08f))
+                        .background(if (sel) LocalAccent.current else Nx.SurfaceHigh)
                         .clickable { onLoadSource(src) }
                         .padding(horizontal = 14.dp, vertical = 7.dp)
                 )
@@ -115,12 +116,12 @@ fun LogsScreen(
             val fileSel = state.source == null
             Text(
                 "File",
-                color = if (fileSel) Color(0xFF0B0D12) else Nx.Muted,
+                color = if (fileSel) Color.White else Nx.Muted,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (fileSel) Color.White else Color.White.copy(alpha = 0.08f))
+                    .background(if (fileSel) LocalAccent.current else Nx.SurfaceHigh)
                     .clickable { onLoadFile(path) }
                     .padding(horizontal = 14.dp, vertical = 7.dp)
             )
@@ -174,7 +175,7 @@ fun LogsScreen(
                         "warn" in lower -> Color(0xFFFBBF24)
                         else -> Color(0xFFCBD5E1)
                     }
-                    Text(line.ifEmpty { " " }, color = color, fontFamily = FontFamily.Monospace, fontSize = 11.sp, softWrap = false)
+                    Text(line.ifEmpty { " " }, color = color, fontFamily = GeistMonoFamily, fontSize = 11.sp, softWrap = false)
                 }
             }
         }

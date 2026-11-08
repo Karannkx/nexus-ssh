@@ -1,5 +1,7 @@
 package com.nexus.ssh.ui.screens
 
+import com.nexus.ssh.ui.GeistMonoFamily
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,9 +22,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.Fingerprint
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material3.AlertDialog
@@ -31,6 +35,11 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -40,11 +49,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -134,8 +143,8 @@ fun ServerEditorDialog(
                             Modifier
                                 .size(44.dp)
                                 .clip(RoundedCornerShape(14.dp))
-                                .background(if (sel) opt.tint.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.06f))
-                                .border(if (sel) 2.dp else 1.dp, if (sel) opt.tint else Color.White.copy(alpha = 0.12f), RoundedCornerShape(14.dp))
+                                .background(if (sel) opt.tint.copy(alpha = 0.22f) else Nx.SurfaceHigh)
+                                .border(if (sel) 2.dp else 1.dp, if (sel) opt.tint else Nx.Border, RoundedCornerShape(14.dp))
                                 .clickable(onClickLabel = opt.label) { iconKey = opt.key },
                             contentAlignment = Alignment.Center
                         ) { Icon(opt.icon, contentDescription = opt.label, tint = opt.tint, modifier = Modifier.size(24.dp)) }
@@ -147,12 +156,12 @@ fun ServerEditorDialog(
                         val sel = authType == type
                         Text(
                             label,
-                            color = if (sel) Color(0xFF0B0D12) else Nx.Muted,
+                            color = if (sel) Color.White else Nx.Muted,
                             fontWeight = FontWeight.Medium,
                             fontSize = 13.sp,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(if (sel) Color.White else Color.White.copy(alpha = 0.08f))
+                                .background(if (sel) LocalAccent.current else Nx.SurfaceHigh)
                                 .clickable { if (authType != type) { authType = type; secret = "" } }
                                 .padding(horizontal = 14.dp, vertical = 8.dp)
                         )
@@ -225,14 +234,14 @@ fun IconPickerDialog(currentKey: String, onPick: (String) -> Unit, onDismiss: ()
                         Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(14.dp))
-                            .background(if (opt.key == currentKey) Color.White.copy(alpha = 0.09f) else Color.Transparent)
+                            .background(if (opt.key == currentKey) Nx.SurfaceHigh else Color.Transparent)
                             .clickable { onPick(opt.key) }
                             .padding(horizontal = 12.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(opt.icon, contentDescription = null, tint = opt.tint, modifier = Modifier.size(26.dp))
                         Spacer(Modifier.width(14.dp))
-                        Text(opt.label, color = Color.White, fontSize = 16.sp)
+                        Text(opt.label, color = Nx.Text, fontSize = 16.sp)
                     }
                 }
             }
@@ -268,10 +277,10 @@ fun HostKeyDialog(
                         "Compare this fingerprint with the one on your server (ssh-keygen -lf /etc/ssh/ssh_host_*_key.pub).",
                     fontSize = 13.sp, color = Nx.Muted
                 )
-                Text("Algorithm: $keyAlgorithm", color = LocalAccent.current, fontFamily = FontFamily.Monospace, fontSize = 12.sp)
+                Text("Algorithm: $keyAlgorithm", color = LocalAccent.current, fontFamily = GeistMonoFamily, fontSize = 12.sp)
                 Text(
                     fingerprint,
-                    fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = Color.White,
+                    fontFamily = GeistMonoFamily, fontSize = 12.sp, color = Nx.Text,
                     modifier = Modifier.background(Nx.Bg, RoundedCornerShape(10.dp)).padding(10.dp)
                 )
                 Text("Trust this key and connect? It will be remembered for future connections.", fontSize = 13.sp, color = Nx.Muted)
@@ -316,11 +325,11 @@ fun SearchDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
-                            Modifier.size(44.dp).clip(RoundedCornerShape(13.dp)).background(Color(0xFF262A33)),
+                            Modifier.size(44.dp).clip(RoundedCornerShape(13.dp)).background(Nx.SurfaceHigh),
                             contentAlignment = Alignment.Center
                         ) { t.glyph() }
                         Spacer(Modifier.width(14.dp))
-                        Text(t.label, color = Color.White, fontSize = 15.sp)
+                        Text(t.label, color = Nx.Text, fontSize = 15.sp)
                     }
                 }
                 if (matched.isNotEmpty()) item { Text("SERVERS", color = Nx.Muted, fontSize = 11.sp, letterSpacing = 1.sp, modifier = Modifier.padding(6.dp)) }
@@ -333,7 +342,7 @@ fun SearchDialog(
                         Icon(spec.icon, null, tint = spec.tint, modifier = Modifier.size(24.dp))
                         Spacer(Modifier.width(14.dp))
                         Column {
-                            Text(s.name, color = Color.White, fontSize = 15.sp)
+                            Text(s.name, color = Nx.Text, fontSize = 15.sp)
                             Text("${s.username}@${s.hostname}", color = Nx.Muted, fontSize = 12.sp)
                         }
                     }
@@ -350,7 +359,7 @@ fun NoticesSheet(notices: List<AppNotice>, onClear: () -> Unit, onDismiss: () ->
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Nx.SurfaceHigh) {
         Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 24.dp).navigationBarsPadding()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Activity", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Text("Activity", color = Nx.Text, fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 if (notices.isNotEmpty()) TextButton(onClick = onClear) { Text("Clear", color = LocalAccent.current) }
             }
             if (notices.isEmpty()) {
@@ -361,8 +370,8 @@ fun NoticesSheet(notices: List<AppNotice>, onClear: () -> Unit, onDismiss: () ->
                 LazyColumn(Modifier.height(360.dp)) {
                     items(notices, key = { it.id }) { n ->
                         Row(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-                            Text(noticeFormat.format(Date(n.time)), color = Nx.Muted, fontSize = 12.sp, fontFamily = FontFamily.Monospace, modifier = Modifier.width(66.dp))
-                            Text(n.text, color = Color.White, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                            Text(noticeFormat.format(Date(n.time)), color = Nx.Muted, fontSize = 12.sp, fontFamily = GeistMonoFamily, modifier = Modifier.width(66.dp))
+                            Text(n.text, color = Nx.Text, fontSize = 14.sp, modifier = Modifier.weight(1f))
                         }
                     }
                 }
@@ -373,17 +382,58 @@ fun NoticesSheet(notices: List<AppNotice>, onClear: () -> Unit, onDismiss: () ->
 
 @Composable
 fun LockScreen(onUnlock: () -> Unit) {
-    Column(
-        Modifier.fillMaxSize().background(Nx.Bg).padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        com.nexus.ssh.ui.components.NexusLogo(size = 72.dp)
-        Spacer(Modifier.height(20.dp))
-        Text("Nexus SSH is locked", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(6.dp))
-        Text("Authenticate to continue", color = Nx.Muted, fontSize = 14.sp)
-        Spacer(Modifier.height(22.dp))
-        PrimaryButton("Unlock", onUnlock)
+    val pulse = rememberInfiniteTransition(label = "lockPulse")
+    val scale by pulse.animateFloat(
+        initialValue = 0.96f,
+        targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(tween(1300), RepeatMode.Reverse),
+        label = "fingerprintPulse"
+    )
+    val alpha by pulse.animateFloat(
+        initialValue = 0.48f,
+        targetValue = 0.95f,
+        animationSpec = infiniteRepeatable(tween(1300), RepeatMode.Reverse),
+        label = "fingerprintAlpha"
+    )
+    Box(Modifier.fillMaxSize().background(Nx.Bg), contentAlignment = Alignment.Center) {
+        com.nexus.ssh.ui.NexusBackdrop(wallpaper = true)
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = 28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                Modifier.size(104.dp).graphicsLayer { scaleX = scale; scaleY = scale }
+                    .background(Color(0xFFE6F3E8), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Rounded.Fingerprint,
+                    contentDescription = null,
+                    tint = Nx.Green.copy(alpha = alpha),
+                    modifier = Modifier.size(58.dp)
+                )
+            }
+            Spacer(Modifier.height(28.dp))
+            Text("Welcome back", color = Nx.Text, fontSize = 27.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(8.dp))
+            Text("Unlock Nexus SSH to access your servers", color = Nx.Muted, fontSize = 14.sp)
+            Spacer(Modifier.height(30.dp))
+            Box(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp))
+                    .background(Color.White).border(1.dp, Nx.Border, RoundedCornerShape(22.dp))
+                    .padding(18.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Secure access", color = Nx.Text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Spacer(Modifier.height(5.dp))
+                    Text("Use fingerprint, face unlock or your device PIN", color = Nx.Muted, fontSize = 12.sp)
+                    Spacer(Modifier.height(16.dp))
+                    PrimaryButton("Unlock Nexus SSH", onUnlock)
+                }
+            }
+            Spacer(Modifier.height(20.dp))
+            Text("Your server credentials remain encrypted on this device", color = Nx.Faint, fontSize = 11.sp)
+        }
     }
 }

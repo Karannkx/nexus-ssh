@@ -120,7 +120,7 @@ fun NexusLogo(modifier: Modifier = Modifier, size: Dp = 46.dp) {
     )
 }
 
-/** Dark rounded app tile with a label underneath (home quick-access grid). */
+/** Light rounded app tile with a label underneath (home quick-access grid). */
 @Composable
 fun IconTile(icon: ImageVector, tint: Color, label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Column(
@@ -133,14 +133,14 @@ fun IconTile(icon: ImageVector, tint: Color, label: String, onClick: () -> Unit,
         Box(
             Modifier
                 .size(66.dp)
-                .shadow(10.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black, spotColor = Color.Black)
+                .shadow(5.dp, RoundedCornerShape(20.dp), ambientColor = Color(0x221C6B3B), spotColor = Color(0x221C6B3B))
                 .glass(RoundedCornerShape(20.dp), fill = 0.92f),
             contentAlignment = Alignment.Center
         ) {
             Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(32.dp))
         }
         Spacer(Modifier.height(8.dp))
-        Text(label, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+        Text(label, color = Nx.Text, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1)
     }
 }
 
@@ -161,13 +161,13 @@ fun ScreenTopBar(
     ) {
         if (onBack != null) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = Color.White)
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = Nx.Text)
             }
         } else {
             Spacer(Modifier.width(12.dp))
         }
         Column(Modifier.weight(1f)) {
-            Text(title, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+            Text(title, color = Nx.Text, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
             if (!subtitle.isNullOrBlank()) {
                 Text(subtitle, color = Nx.Muted, fontSize = 13.sp, maxLines = 1)
             }
@@ -194,7 +194,7 @@ fun EmptyState(
             Icon(icon, contentDescription = null, tint = LocalAccent.current, modifier = Modifier.size(34.dp))
         }
         Spacer(Modifier.height(16.dp))
-        Text(title, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+        Text(title, color = Nx.Text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
         Spacer(Modifier.height(6.dp))
         Text(message, color = Nx.Muted, fontSize = 14.sp, textAlign = TextAlign.Center)
         if (actionLabel != null && onAction != null) {
@@ -215,7 +215,7 @@ fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifi
             .padding(horizontal = 22.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(text, color = Color(0xFF04101C), fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+        Text(text, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
     }
 }
 
@@ -256,8 +256,8 @@ class NavItemSpec(val route: String, val icon: ImageVector, val label: String)
 @Composable
 private fun NavButton(item: NavItemSpec, selected: Boolean, onSelect: (NavItemSpec) -> Unit) {
     val haptic = LocalHapticFeedback.current
-    val bg by animateColorAsState(if (selected) Color.White else Color.Transparent, label = "navBg")
-    val fg by animateColorAsState(if (selected) Color(0xFF0B0D12) else Nx.Muted, label = "navFg")
+    val bg by animateColorAsState(if (selected) LocalAccent.current else Color.Transparent, label = "navBg")
+    val fg by animateColorAsState(if (selected) Color.White else Nx.Muted, label = "navFg")
     Box(
         Modifier
             .size(width = 58.dp, height = 52.dp)
@@ -293,7 +293,7 @@ fun FloatingNavBar(
                 .widthIn(max = 460.dp)
                 .fillMaxWidth()
                 .height(68.dp)
-                .shadow(18.dp, RoundedCornerShape(32.dp), ambientColor = Color.Black, spotColor = Color.Black)
+                .shadow(10.dp, RoundedCornerShape(32.dp), ambientColor = Color(0x221C6B3B), spotColor = Color(0x221C6B3B))
                 .glass(RoundedCornerShape(32.dp), fill = 0.9f)
                 .padding(horizontal = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
@@ -321,7 +321,7 @@ fun FloatingNavRail(
     ) {
         Column(
             Modifier
-                .shadow(18.dp, RoundedCornerShape(30.dp), ambientColor = Color.Black, spotColor = Color.Black)
+                .shadow(10.dp, RoundedCornerShape(30.dp), ambientColor = Color(0x221C6B3B), spotColor = Color(0x221C6B3B))
                 .glass(RoundedCornerShape(30.dp), fill = 0.9f)
                 .padding(vertical = 10.dp, horizontal = 8.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -362,7 +362,7 @@ fun ServerStackIllustration(modifier: Modifier = Modifier) {
                 lineTo(x0 + fw, y)
                 close()
             }
-            drawPath(top, Brush.linearGradient(listOf(Color(0xFF4A5060), Color(0xFF2B2F3A))))
+            drawPath(top, Brush.linearGradient(listOf(Color(0xFFB5DCC0), Color(0xFF75B98A))))
             // side face
             val side = Path().apply {
                 moveTo(x0 + fw, y)
@@ -371,16 +371,16 @@ fun ServerStackIllustration(modifier: Modifier = Modifier) {
                 lineTo(x0 + fw, y + sh)
                 close()
             }
-            drawPath(side, Brush.verticalGradient(listOf(Color(0xFF1B1E26), Color(0xFF0C0D11))))
+            drawPath(side, Brush.verticalGradient(listOf(Color(0xFF38895A), Color(0xFF155B39))))
             // front face
             drawRoundRect(
-                Brush.verticalGradient(listOf(Color(0xFF2E323D), Color(0xFF15171D))),
+                Brush.verticalGradient(listOf(Color(0xFF2F9A5C), Color(0xFF17643D))),
                 topLeft = Offset(x0, y),
                 size = Size(fw, sh),
                 cornerRadius = CornerRadius(w * 0.02f)
             )
             drawRoundRect(
-                Color.White.copy(alpha = 0.10f),
+                Nx.Border.copy(alpha = 0.8f),
                 topLeft = Offset(x0, y),
                 size = Size(fw, sh),
                 cornerRadius = CornerRadius(w * 0.02f),
@@ -388,14 +388,14 @@ fun ServerStackIllustration(modifier: Modifier = Modifier) {
             )
             // status LEDs
             val ledY = y + sh / 2f
-            val ledColors = listOf(Nx.Green, Nx.Blue, Nx.Amber)
+            val ledColors = listOf(Color(0xFFB7F3C7), Color(0xFF4BA6E8), Color(0xFFF2C45B))
             for (k in 0 until 3) {
                 drawCircle(ledColors[k], radius = w * 0.016f, center = Offset(x0 + fw * (0.10f + 0.07f * k), ledY))
             }
             // vent slots
             for (k in 0 until 4) {
                 drawLine(
-                    Color.White.copy(alpha = 0.16f),
+                    Nx.Border,
                     Offset(x0 + fw * (0.50f + 0.10f * k), y + sh * 0.28f),
                     Offset(x0 + fw * (0.50f + 0.10f * k), y + sh * 0.72f),
                     strokeWidth = 1.5.dp.toPx(),
@@ -551,7 +551,7 @@ fun LineChart(
                     val h = size.height
                     for (i in 0..4) {
                         val y = h * i / 4f
-                        drawLine(Color.White.copy(alpha = 0.08f), Offset(0f, y), Offset(w, y), 1.dp.toPx())
+                        drawLine(Nx.Border.copy(alpha = 0.7f), Offset(0f, y), Offset(w, y), 1.dp.toPx())
                     }
                     if (n >= 2) {
                         series.forEachIndexed { si, s ->

@@ -1,5 +1,7 @@
 package com.nexus.ssh.ui.screens
 
+import com.nexus.ssh.ui.GeistMonoFamily
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -37,7 +39,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -70,7 +71,7 @@ fun SnippetsScreen(
     Column(Modifier.fillMaxSize()) {
         ScreenTopBar("Snippets", onBack, subtitle = if (connected) "Run in the terminal" else "Connect to run them") {
             IconButton(onClick = { creating = true }) {
-                Icon(Icons.Rounded.Add, contentDescription = "New snippet", tint = Color.White)
+                Icon(Icons.Rounded.Add, contentDescription = "New snippet", tint = Nx.Text)
             }
         }
         if (snippets.isEmpty()) {
@@ -93,7 +94,7 @@ fun SnippetsScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
                                     sn.title.ifBlank { "Untitled" },
-                                    color = Color.White,
+                                    color = Nx.Text,
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     maxLines = 1,
@@ -107,7 +108,7 @@ fun SnippetsScreen(
                             Text(
                                 sn.command,
                                 color = Color(0xFFE2E8F0),
-                                fontFamily = FontFamily.Monospace,
+                                fontFamily = GeistMonoFamily,
                                 fontSize = 12.sp,
                                 maxLines = 3,
                                 overflow = TextOverflow.Ellipsis,
@@ -128,9 +129,9 @@ fun SnippetsScreen(
                                         .padding(horizontal = 16.dp, vertical = 9.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Icon(Icons.Rounded.PlayArrow, contentDescription = null, tint = Color(0xFF04101C))
+                                    Icon(Icons.Rounded.PlayArrow, contentDescription = null, tint = Color.White)
                                     Spacer(Modifier.width(6.dp))
-                                    Text("Run", color = Color(0xFF04101C), fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                                    Text("Run", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                                 }
                             }
                         }

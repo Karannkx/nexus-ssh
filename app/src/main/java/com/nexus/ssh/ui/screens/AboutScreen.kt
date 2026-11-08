@@ -52,7 +52,7 @@ fun AboutScreen(onBack: () -> Unit, onOpenUrl: (String) -> Unit) {
             Column(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 NexusLogo(size = 92.dp)
                 Spacer(Modifier.height(14.dp))
-                Text(AppInfo.APP_NAME, color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+                Text(AppInfo.APP_NAME, color = Nx.Text, fontSize = 26.sp, fontWeight = FontWeight.Bold)
                 Text("Version ${BuildConfig.VERSION_NAME}", color = Nx.Muted, fontSize = 14.sp)
                 Spacer(Modifier.height(8.dp))
                 Text(
@@ -101,7 +101,7 @@ fun AboutScreen(onBack: () -> Unit, onOpenUrl: (String) -> Unit) {
                 RowDivider()
                 ListRow(
                     title = "Built with",
-                    subtitle = "Kotlin, Jetpack Compose, SSHJ, Room, BouncyCastle. Typeface: Inter (SIL Open Font License).",
+                    subtitle = "Kotlin, Jetpack Compose, SSHJ, Room, BouncyCastle. Type: Geist, Geist Mono and Bricolage Grotesque. Icons: Phosphor.",
                     leading = { IconBadge(Icons.Rounded.Layers, Nx.Cyan) }
                 )
             }

@@ -5,8 +5,40 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
+// Download open-source variable fonts into generated Android resources. Keeping these out of
+// source control avoids checking in binary font blobs while ensuring the APK bundles them offline.
+val generatedDesignRes = layout.buildDirectory.dir("generated/res/designFonts")
+val downloadDesignFonts by tasks.registering {
+    val fontFiles = mapOf(
+        "font/geist_sans.ttf" to "https://raw.githubusercontent.com/google/fonts/718e1db4deb9e4d9d85a0ead1b9f5fde2761ccfd/ofl/geist/Geist%5Bwght%5D.ttf",
+        "font/geist_mono.ttf" to "https://raw.githubusercontent.com/google/fonts/718e1db4deb9e4d9d85a0ead1b9f5fde2761ccfd/ofl/geistmono/GeistMono%5Bwght%5D.ttf",
+        "font/bricolage_grotesque.ttf" to "https://raw.githubusercontent.com/google/fonts/718e1db4deb9e4d9d85a0ead1b9f5fde2761ccfd/ofl/bricolagegrotesque/BricolageGrotesque%5Bopsz%2Cwdth%2Cwght%5D.ttf"
+    )
+    outputs.dir(generatedDesignRes)
+    doLast {
+        val root = generatedDesignRes.get().asFile
+        fontFiles.forEach { (relative, source) ->
+            val target = root.resolve(relative)
+            if (!target.exists() || target.length() < 10_000L) {
+                target.parentFile.mkdirs()
+                val connection = java.net.URL(source).openConnection().apply {
+                    connectTimeout = 20_000
+                    readTimeout = 60_000
+                }
+                connection.getInputStream().use { input -> target.outputStream().use(input::copyTo) }
+                check(target.length() > 10_000L) { "Downloaded font is unexpectedly small: $relative" }
+                val signature = target.inputStream().use { input -> ByteArray(4).also { input.read(it) } }
+                check(signature.contentEquals(byteArrayOf(0, 1, 0, 0)) || signature.contentEquals("OTTO".toByteArray())) {
+                    "Downloaded asset is not a valid OpenType / TrueType font: $relative"
+                }
+            }
+        }
+    }
+}
+
 android {
     namespace = "com.nexus.ssh"
+    sourceSets.getByName("main").res.srcDir(generatedDesignRes)
     compileSdk = 35
 
     defaultConfig {
@@ -91,6 +123,8 @@ ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }
 
+tasks.named("preBuild").configure { dependsOn(downloadDesignFonts) }
+
 dependencies {
     // AndroidX Core & Lifecycle
     implementation("androidx.core:core-ktx:1.15.0")
@@ -105,7 +139,8 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3:1.3.1")
-    implementation("androidx.compose.material:material-icons-extended")
+    implementation("androidx.compose.material:material-icons-extended") // retained for legacy/specialized screen glyphs
+    implementation("com.adamglin:phosphor-icon:1.0.0") // Phosphor Compose icon family
     implementation("androidx.navigation:navigation-compose:2.8.5")
 
     // Coroutines

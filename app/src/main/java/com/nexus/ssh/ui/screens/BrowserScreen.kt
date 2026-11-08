@@ -144,7 +144,7 @@ fun BrowserScreen(
     Column(Modifier.fillMaxSize()) {
         ScreenTopBar("Browser", onBack, subtitle = serverName.ifBlank { null }) {
             IconButton(onClick = onRefreshPorts, enabled = connected) {
-                Icon(Icons.Rounded.Refresh, contentDescription = "Scan ports", tint = if (connected) Color.White else Nx.Faint)
+                Icon(Icons.Rounded.Refresh, contentDescription = "Scan ports", tint = if (connected) Nx.Green else Nx.Faint)
             }
         }
         OutlinedTextField(
@@ -357,12 +357,12 @@ private fun WebPage(
             Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 4.dp).height(60.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onClose) { Icon(Icons.Rounded.Close, contentDescription = "Close page", tint = Color.White) }
+            IconButton(onClick = onClose) { Icon(Icons.Rounded.Close, contentDescription = "Close page", tint = Nx.Text) }
             Column(Modifier.weight(1f)) {
-                Text(pageTitle, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                Text(pageTitle, color = Nx.Text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
                 Text(shownUrl, color = Nx.Muted, fontSize = 12.sp, maxLines = 1)
             }
-            IconButton(onClick = { webView.reload() }) { Icon(Icons.Rounded.Refresh, contentDescription = "Reload", tint = Color.White) }
+            IconButton(onClick = { webView.reload() }) { Icon(Icons.Rounded.Refresh, contentDescription = "Reload", tint = Nx.Text) }
         }
         if (progress in 1..99) {
             LinearProgressIndicator(progress = { progress / 100f }, modifier = Modifier.fillMaxWidth().height(3.dp), color = LocalAccent.current, trackColor = Color.Transparent)
@@ -376,10 +376,10 @@ private fun WebPage(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = { webView.goBack() }, enabled = canBack) {
-                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = if (canBack) Color.White else Nx.Faint)
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = if (canBack) Nx.Green else Nx.Faint)
             }
             IconButton(onClick = { webView.goForward() }, enabled = canForward) {
-                Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = "Forward", tint = if (canForward) Color.White else Nx.Faint)
+                Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = "Forward", tint = if (canForward) Nx.Green else Nx.Faint)
             }
             IconButton(onClick = {
                 if (bookmark != null) onRemoveBookmark(bookmark)
@@ -388,7 +388,7 @@ private fun WebPage(
                 Icon(
                     if (bookmark != null) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
                     contentDescription = "Bookmark",
-                    tint = if (bookmark != null) Nx.Amber else Color.White
+                    tint = if (bookmark != null) Nx.Amber else Nx.Green
                 )
             }
         }

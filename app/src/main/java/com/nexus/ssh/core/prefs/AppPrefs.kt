@@ -18,7 +18,7 @@ class AppPrefs(context: Context) {
     private val _showWallpaper = MutableStateFlow(sp.getBoolean("wallpaper", true))
     val showWallpaper: StateFlow<Boolean> = _showWallpaper
 
-    private val _accent = MutableStateFlow(sp.getString("accent", "blue") ?: "blue")
+    private val _accent = MutableStateFlow(sp.getString("accent", "green") ?: "green")
     val accent: StateFlow<String> = _accent
 
     private val _appLock = MutableStateFlow(sp.getBoolean("app_lock", false))

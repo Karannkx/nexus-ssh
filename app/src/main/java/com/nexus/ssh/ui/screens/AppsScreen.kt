@@ -53,7 +53,7 @@ fun AppsScreen(onNavigate: (String) -> Unit) {
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         Text(
             "Apps",
-            color = Color.White,
+            color = Nx.Text,
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(start = 24.dp, top = 22.dp, bottom = 12.dp)

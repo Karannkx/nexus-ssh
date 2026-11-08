@@ -82,7 +82,7 @@ fun ProcessesScreen(
     Column(Modifier.fillMaxSize()) {
         ScreenTopBar("Processes", onBack, subtitle = serverName.ifBlank { null }) {
             IconButton(onClick = onRefresh, enabled = connected) {
-                Icon(Icons.Rounded.Refresh, contentDescription = "Refresh", tint = if (connected) Color.White else Nx.Faint)
+                Icon(Icons.Rounded.Refresh, contentDescription = "Refresh", tint = if (connected) Nx.Green else Nx.Faint)
             }
         }
         if (!connected) {
@@ -116,13 +116,13 @@ fun ProcessesScreen(
             listOf("CPU", "Memory").forEachIndexed { i, name ->
                 Text(
                     "Sort: $name",
-                    color = if (sort == i) Color(0xFF0B0D12) else Nx.Muted,
+                    color = if (sort == i) Color.White else Nx.Muted,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier
                         .heightIn(min = 36.dp)
                         .clip(RoundedCornerShape(14.dp))
-                        .background(if (sort == i) Color.White else Color.White.copy(alpha = 0.08f))
+                        .background(if (sort == i) LocalAccent.current else Nx.SurfaceHigh)
                         .clickable { sort = i }
                         .padding(horizontal = 14.dp, vertical = 8.dp)
                 )
@@ -147,13 +147,13 @@ fun ProcessesScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text(p.command, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(p.command, color = Nx.Text, fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text("PID ${p.pid} · ${p.user}", color = Nx.Muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
                             String.format(Locale.US, "%.1f%% CPU", p.cpu),
-                            color = if (p.cpu >= 50f) Nx.Amber else Color.White,
+                            color = if (p.cpu >= 50f) Nx.Amber else Nx.Text,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold
                         )

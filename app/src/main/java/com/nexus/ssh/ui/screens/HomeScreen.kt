@@ -98,16 +98,16 @@ fun HomeScreen(
                 NexusLogo(size = 44.dp)
                 Spacer(Modifier.width(12.dp))
                 Column {
-                    Text("Nexus SSH", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text("Nexus SSH", color = Nx.Text, fontSize = 22.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                     Text("Secure • Manage • Anywhere", color = Nx.Muted, fontSize = 12.sp, maxLines = 1)
                 }
             }
             IconButton(onClick = onSearch) {
-                Icon(Icons.Rounded.Search, contentDescription = "Search", tint = Color.White, modifier = Modifier.size(26.dp))
+                Icon(Icons.Rounded.Search, contentDescription = "Search", tint = Nx.Text, modifier = Modifier.size(26.dp))
             }
             Box {
                 IconButton(onClick = onNotifications) {
-                    Icon(Icons.Rounded.Notifications, contentDescription = "Notifications", tint = Color.White, modifier = Modifier.size(26.dp))
+                    Icon(Icons.Rounded.Notifications, contentDescription = "Notifications", tint = Nx.Text, modifier = Modifier.size(26.dp))
                 }
                 if (unread > 0) {
                     Box(
@@ -118,7 +118,7 @@ fun HomeScreen(
                             .background(Nx.Red, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(if (unread > 9) "9+" else unread.toString(), color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                        Text(if (unread > 9) "9+" else unread.toString(), color = Nx.Text, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -129,7 +129,7 @@ fun HomeScreen(
             Column(Modifier.weight(1f)) {
                 Text(
                     if (displayName.isBlank()) "Hello" else "Hello, $displayName",
-                    color = Color.White,
+                    color = Nx.Text,
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 2,
@@ -165,7 +165,7 @@ fun HomeScreen(
         if (selected == null) {
             GlassCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Add your first server", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Add your first server", color = Nx.Text, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(4.dp))
                     Text("Connect with a password or a private key.", color = Nx.Muted, fontSize = 13.sp)
                     Spacer(Modifier.height(14.dp))
@@ -185,7 +185,7 @@ fun HomeScreen(
                         )
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(selected.name, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(selected.name, color = Nx.Text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(
                                 "${selected.username}@${selected.hostname}:${selected.port}",
                                 color = Nx.Muted,

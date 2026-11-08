@@ -7,6 +7,7 @@
 ![Platform](https://img.shields.io/badge/Platform-Android%208.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.0.21-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)
 ![Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)
+![Design](https://img.shields.io/badge/Design-Geist%20%2B%20Phosphor-218B55?style=for-the-badge)
 ![Build](https://img.shields.io/github/actions/workflow/status/Karannkx/nexus-ssh/build-apk.yml?style=for-the-badge&logo=githubactions&logoColor=white&label=Build)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
 ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=for-the-badge)
@@ -43,7 +44,7 @@
 | 🧩 | **Launcher home** | Android-style icon grid you can rearrange by touching, holding and dragging, plus an A-Z app drawer with search |
 | 📜 | **Log viewer** | journald / syslog, kernel, SSH and any custom log file with live filtering |
 | 🔒 | **App lock** | Optional biometric / device-credential lock and screenshot protection |
-| 🎨 | **Theming** | Glass UI with wallpaper toggle and accent colours, adjustable terminal font size and refresh rate |
+| 🎨 | **Theming** | Warm ivory / forest-green design, generated wave wallpaper, accent colours, Geist + Bricolage typography and Phosphor icon assets |
 
 > ℹ️ One server is connected at a time; all other saved servers stay one tap away.
 
@@ -73,13 +74,13 @@ cd nexus-ssh
 
 ### 🏗️ 3. Build from the command line
 
-> ℹ️ The Gradle wrapper isn't committed yet. Install [Gradle 8.10.2](https://gradle.org/releases/) (or run `gradle wrapper --gradle-version 8.10.2` once to generate `gradlew`).
+> ℹ️ The repository uses the installed Gradle 8.10.2 command in CI. The Gradle wrapper is not committed yet. Install [Gradle 8.10.2](https://gradle.org/releases/) locally, or open the project in Android Studio and use its Gradle integration. A first clean build needs network access to fetch the bundled open-source font files.
 
 ```bash
-# Debug APK
-gradle :app:assembleDebug
+# Unit tests + Android lint + Debug APK
+gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
 
-# Output:
+# Debug APK output:
 # app/build/outputs/apk/debug/app-debug.apk
 ```
 
@@ -93,7 +94,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 ### 🤖 4. Get an APK from CI (no setup needed)
 
-Every push and pull request runs the **Build Android APK** workflow.
+Every push and pull request runs the **Android CI** workflow: unit tests, Android lint, then a debug APK build. Version tags (`v*`) also trigger a release APK build and GitHub Release upload.
 Open the **Actions** tab → latest run → download the **`nexus-ssh-apk`** artifact.
 
 ---
@@ -126,11 +127,12 @@ nexus-ssh/
 │   │   │   ├── ssh/                     # Connection, PTY session, terminal buffer, parsers
 │   │   │   └── sftp/                    # SftpManager (list, edit, upload, download)
 │   │   └── ui/
-│   │       ├── Theme.kt, Icons.kt       # Inter typography, glass surfaces, custom icons
+│   │       ├── Theme.kt, Icons.kt       # Geist / Bricolage typography, Phosphor + custom icons
 │   │       ├── components/              # Nav bar, cards, charts, illustrations
 │   │       └── screens/                 # Home, Servers, Files, Monitor, Terminal, Docker,
 │   │                                    # Services, Logs, Apps, Settings, dialogs
-│   └── res/                             # Wallpaper (webp), Inter font, themes
+│   └── res/                             # Wallpaper, splash art, theme resources
+├── THIRD_PARTY_NOTICES.md               # Font and icon attribution / licenses
 ├── build.gradle.kts
 └── settings.gradle.kts
 ```
@@ -196,9 +198,19 @@ Please include your Android version, device model, what you expected vs. what ha
 
 ---
 
+## 🎨 Design system
+
+- **Geist Sans** is used for general UI text and controls.
+- **Geist Mono** is used for terminal output, IP addresses, paths and other technical values.
+- **Bricolage Grotesque** is reserved for display and screen headings so it adds personality without hurting dense UI readability.
+- **Phosphor Icons** are used for the server identity icon set and can be extended across screens; legacy Material glyphs remain only where a screen-specific symbol has not yet been migrated.
+- Font binaries are downloaded at build time from the upstream Google Fonts repository into generated Android resources, then bundled locally in the APK. No font is fetched at runtime.
+- See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for upstream sources and licenses.
+
 ## ⚠️ Limitations
 
 - The terminal is line-oriented; full-screen TUI apps are not rendered correctly yet.
+- The tag-triggered release APK currently uses the repository's debug signing config for test distribution. Replace `signingConfig` with your private release keystore before publishing to Play Store or distributing a production build.
 - SFTP editing is limited to text files up to 1 MB.
 - Docker / systemd actions require your user to have the needed permissions (or passwordless `sudo`).
 

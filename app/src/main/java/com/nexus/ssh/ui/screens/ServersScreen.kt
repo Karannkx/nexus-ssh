@@ -112,7 +112,7 @@ fun ServersScreen(
                 .background(Color(0xF2121419))
                 .border(
                     1.dp,
-                    Color.White.copy(alpha = 0.10f),
+                    Nx.Border.copy(alpha = 0.8f),
                     RoundedCornerShape(topEnd = 34.dp, bottomEnd = 34.dp)
                 )
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { }
@@ -122,9 +122,9 @@ fun ServersScreen(
             Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 18.dp), verticalAlignment = Alignment.CenterVertically) {
                 NexusLogo(size = 42.dp)
                 Spacer(Modifier.width(12.dp))
-                Text("Nexus SSH", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Text("Nexus SSH", color = Nx.Text, fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 IconButton(onClick = onClose) {
-                    Icon(Icons.Rounded.Close, contentDescription = "Close", tint = Color.White)
+                    Icon(Icons.Rounded.Close, contentDescription = "Close", tint = Nx.Text)
                 }
             }
 
@@ -134,11 +134,11 @@ fun ServersScreen(
                     Modifier
                         .size(38.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color.White.copy(alpha = 0.10f))
+                        .background(Nx.Border.copy(alpha = 0.8f))
                         .clickable(onClickLabel = "Add server", onClick = onAdd),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Rounded.Add, contentDescription = "Add server", tint = Color.White)
+                    Icon(Icons.Rounded.Add, contentDescription = "Add server", tint = Nx.Text)
                 }
             }
 
@@ -146,7 +146,7 @@ fun ServersScreen(
                 if (servers.isEmpty()) {
                     item {
                         Column(Modifier.fillMaxWidth().padding(vertical = 20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("No servers yet", color = Color.White, fontWeight = FontWeight.SemiBold)
+                            Text("No servers yet", color = Nx.Text, fontWeight = FontWeight.SemiBold)
                             Spacer(Modifier.height(4.dp))
                             Text("Add one to get started.", color = Nx.Muted, fontSize = 13.sp)
                             Spacer(Modifier.height(12.dp))
@@ -162,7 +162,7 @@ fun ServersScreen(
                         Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(16.dp))
-                            .background(if (isSelected) Color.White.copy(alpha = 0.09f) else Color.Transparent)
+                            .background(if (isSelected) LocalAccent.current.copy(alpha = 0.10f) else Color.Transparent)
                             .clickable { onSelect(server) }
                             .padding(start = 12.dp, top = 6.dp, bottom = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -179,18 +179,18 @@ fun ServersScreen(
                         Icon(spec.icon, contentDescription = spec.label, tint = spec.tint, modifier = Modifier.size(26.dp))
                         Spacer(Modifier.width(14.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(server.name, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                            Text(server.name, color = Nx.Text, fontSize = 17.sp, fontWeight = FontWeight.Medium, maxLines = 1)
                             Text("${server.username}@${server.hostname} · ${relativeTime(server.lastConnectedAt)}", color = Nx.Muted, fontSize = 12.sp, maxLines = 1)
                         }
                         IconButton(onClick = { menuFor = server }) {
-                            Icon(Icons.Rounded.MoreVert, contentDescription = "Server options", tint = Color.White)
+                            Icon(Icons.Rounded.MoreVert, contentDescription = "Server options", tint = Nx.Text)
                         }
                     }
                 }
 
                 item {
                     Spacer(Modifier.height(14.dp))
-                    Box(Modifier.fillMaxWidth().height(1.dp).background(Color.White.copy(alpha = 0.08f)))
+                    Box(Modifier.fillMaxWidth().height(1.dp).background(Nx.Border.copy(alpha = 0.7f)))
                     Spacer(Modifier.height(16.dp))
                     SectionLabel("Favorites")
                     Spacer(Modifier.height(6.dp))
@@ -206,7 +206,7 @@ fun ServersScreen(
                     ) {
                         Icon(Icons.Rounded.Folder, contentDescription = null, tint = Nx.Muted, modifier = Modifier.size(24.dp))
                         Spacer(Modifier.width(16.dp))
-                        Text(fav.label, color = Color.White, fontSize = 16.sp, modifier = Modifier.weight(1f), maxLines = 1)
+                        Text(fav.label, color = Nx.Text, fontSize = 16.sp, modifier = Modifier.weight(1f), maxLines = 1)
                         if (fav.custom && fav.path != null) {
                             IconButton(onClick = { onRemoveFavorite(fav.path) }) {
                                 Icon(Icons.Rounded.Close, contentDescription = "Remove favorite", tint = Nx.Muted, modifier = Modifier.size(18.dp))
@@ -229,7 +229,7 @@ fun ServersScreen(
             ) {
                 Icon(Icons.Rounded.Tune, contentDescription = null, tint = LocalAccent.current)
                 Spacer(Modifier.width(14.dp))
-                Text("Manage Servers", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                Text("Manage Servers", color = Nx.Text, fontSize = 16.sp, fontWeight = FontWeight.Medium)
             }
         }
     }

@@ -38,7 +38,7 @@ import com.nexus.ssh.ui.Nx
 class SheetAction(
     val label: String,
     val icon: ImageVector? = null,
-    val tint: Color = Color.White,
+    val tint: Color = Nx.Text,
     val selected: Boolean = false,
     val onClick: () -> Unit
 )
@@ -56,7 +56,7 @@ fun ActionSheet(title: String?, subtitle: String? = null, actions: List<SheetAct
         ) {
             if (title != null) {
                 Column(Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
-                    Text(title, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(title, color = Nx.Text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     if (subtitle != null) Text(subtitle, color = Nx.Muted, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
@@ -93,7 +93,7 @@ fun GroupSurface(modifier: Modifier = Modifier, content: @Composable ColumnScope
             .fillMaxWidth()
             .clip(RoundedCornerShape(22.dp))
             .background(Nx.Surface.copy(alpha = 0.92f))
-            .border(0.5.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(22.dp)),
+            .border(0.5.dp, Nx.Border.copy(alpha = 0.7f), RoundedCornerShape(22.dp)),
         content = content
     )
 }
@@ -105,7 +105,7 @@ fun RowDivider(startIndent: Dp = 70.dp) {
             .fillMaxWidth()
             .padding(start = startIndent)
             .height(0.5.dp)
-            .background(Color.White.copy(alpha = 0.08f))
+            .background(Nx.Border.copy(alpha = 0.7f))
     )
 }
 
@@ -128,8 +128,8 @@ fun IconBadge(icon: ImageVector, tint: Color, modifier: Modifier = Modifier, siz
         modifier
             .size(size)
             .clip(RoundedCornerShape(size * 0.3f))
-            .background(Color(0xFF262A33))
-            .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(size * 0.3f)),
+            .background(Nx.SurfaceHigh)
+            .border(1.dp, Nx.Border.copy(alpha = 0.7f), RoundedCornerShape(size * 0.3f)),
         contentAlignment = Alignment.Center
     ) {
         Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(size * 0.55f))
@@ -141,7 +141,7 @@ fun ListRow(
     title: String,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
-    titleColor: Color = Color.White,
+    titleColor: Color = Nx.Text,
     leading: (@Composable () -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
     onClick: (() -> Unit)? = null
