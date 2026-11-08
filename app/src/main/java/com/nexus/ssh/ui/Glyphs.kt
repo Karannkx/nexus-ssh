@@ -76,7 +76,7 @@ val ALL_APPS: List<AppEntry> = listOf(
     AppEntry(Routes.PROCESSES, "Processes", "top ps kill task manager") { GlyphIcon(Icons.Rounded.Memory, Nx.Amber) },
     AppEntry(Routes.SNIPPETS, "Snippets", "saved commands scripts shortcuts") { GlyphIcon(Icons.Rounded.Code, Nx.Magenta) },
     AppEntry(Routes.SERVERS, "Servers", "hosts connections manage") { GlyphIcon(ServersIcon, Nx.Green) },
-    AppEntry(Routes.SETTINGS, "Settings", "theme security preferences") { GlyphIcon(Icons.Rounded.Settings, Color(0xFFB8C0CC)) },
+    AppEntry(Routes.SETTINGS, "Settings", "theme security preferences") { GlyphIcon(Icons.Rounded.Settings, Nx.Green) },
     AppEntry(Routes.ABOUT, "About", "developer version licence") { GlyphIcon(Icons.Rounded.Info, Nx.Cyan) },
     AppEntry(Routes.APPS, "Apps", "all applications launcher") { GlyphIcon(GridIcon, Nx.Green) }
 )

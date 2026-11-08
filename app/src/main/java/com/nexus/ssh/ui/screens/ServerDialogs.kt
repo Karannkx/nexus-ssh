@@ -372,7 +372,7 @@ fun NoticesSheet(notices: List<AppNotice>, onClear: () -> Unit, onDismiss: () ->
                 if (notices.isNotEmpty()) TextButton(onClick = onClear) { Text("Clear", color = LocalAccent.current) }
             }
             if (notices.isEmpty()) {
-                Box(Modifier.fillMaxWidth().height(220.dp)) {
+                Box(Modifier.fillMaxWidth().heightIn(min = 340.dp).padding(vertical = 12.dp)) {
                     EmptyState(Icons.Rounded.Notifications, "All quiet", "Connection events, transfers and errors will show up here.")
                 }
             } else {

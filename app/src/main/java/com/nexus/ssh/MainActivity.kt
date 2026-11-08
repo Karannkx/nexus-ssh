@@ -355,7 +355,7 @@ fun NexusApp(
                 }
             },
             bottomBar = {
-                if (!wide && !imeVisible) {
+                if (!wide && !imeVisible && route != Routes.SERVERS) {
                     FloatingNavBar(items = navItems, selectedRoute = route, onSelect = { navigateTo(it.route) })
                 }
             }
@@ -375,13 +375,13 @@ fun NexusApp(
                             // the terminal pins its own key bar above the keyboard
                             .then(if (route == Routes.TERMINAL) Modifier else Modifier.imePadding()),
                         enterTransition = {
-                            fadeIn(tween(190)) + slideInVertically(
-                                animationSpec = spring(dampingRatio = 0.9f, stiffness = 420f)
-                            ) { it / 32 }
+                            fadeIn(tween(260)) + slideInVertically(
+                                animationSpec = spring(dampingRatio = 0.86f, stiffness = 300f)
+                            ) { it / 14 }
                         },
-                        exitTransition = { fadeOut(tween(140)) },
-                        popEnterTransition = { fadeIn(tween(190)) + slideInVertically(tween(210)) { -it / 36 } },
-                        popExitTransition = { fadeOut(tween(140)) + slideOutVertically(tween(180)) { it / 36 } }
+                        exitTransition = { fadeOut(tween(190)) + slideOutVertically(tween(190)) { -it / 28 } },
+                        popEnterTransition = { fadeIn(tween(260)) + slideInVertically(spring(dampingRatio = 0.86f, stiffness = 300f)) { -it / 14 } },
+                        popExitTransition = { fadeOut(tween(190)) + slideOutVertically(tween(190)) { it / 28 } }
                     ) {
                         composable(Routes.HOME) {
                             HomeScreen(

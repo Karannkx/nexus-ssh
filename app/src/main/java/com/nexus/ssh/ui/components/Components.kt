@@ -1,6 +1,7 @@
 package com.nexus.ssh.ui.components
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -48,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -258,6 +260,7 @@ private fun NavButton(item: NavItemSpec, selected: Boolean, onSelect: (NavItemSp
     val haptic = LocalHapticFeedback.current
     val bg by animateColorAsState(if (selected) LocalAccent.current else Color.Transparent, label = "navBg")
     val fg by animateColorAsState(if (selected) Color.White else Nx.Muted, label = "navFg")
+    val iconScale by animateFloatAsState(if (selected) 1.10f else 0.94f, label = "navIconScale")
     Box(
         Modifier
             .size(width = 58.dp, height = 52.dp)
@@ -269,7 +272,7 @@ private fun NavButton(item: NavItemSpec, selected: Boolean, onSelect: (NavItemSp
             },
         contentAlignment = Alignment.Center
     ) {
-        Icon(item.icon, contentDescription = item.label, tint = fg, modifier = Modifier.size(25.dp))
+        Icon(item.icon, contentDescription = item.label, tint = fg, modifier = Modifier.size(25.dp).graphicsLayer { scaleX = iconScale; scaleY = iconScale })
     }
 }
 
