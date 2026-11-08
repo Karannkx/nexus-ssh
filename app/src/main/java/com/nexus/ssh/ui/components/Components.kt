@@ -114,7 +114,7 @@ fun StatusDot(color: Color, modifier: Modifier = Modifier, size: Dp = 10.dp) {
 @Composable
 fun NexusLogo(modifier: Modifier = Modifier, size: Dp = 46.dp) {
     Image(
-        painter = painterResource(R.drawable.logo_n),
+        painter = painterResource(R.drawable.ic_nexus_mark),
         contentDescription = "Nexus SSH",
         modifier = modifier.size(size)
     )

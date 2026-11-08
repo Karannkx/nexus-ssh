@@ -14,6 +14,7 @@ import androidx.activity.viewModels
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -94,6 +95,7 @@ import com.nexus.ssh.ui.components.FloatingNavBar
 import com.nexus.ssh.ui.components.FloatingNavRail
 import com.nexus.ssh.ui.components.NavItemSpec
 import com.nexus.ssh.ui.components.NexusLoader
+import com.nexus.ssh.ui.components.StartupExperience
 import com.nexus.ssh.ui.screens.AboutScreen
 import com.nexus.ssh.ui.screens.AppsScreen
 import com.nexus.ssh.ui.screens.ProcessesScreen
@@ -240,6 +242,16 @@ fun NexusApp(
     val bookmarks by prefs.webBookmarks.collectAsState()
     val snippets by prefs.snippets.collectAsState()
 
+    var startupStage by rememberSaveable { mutableStateOf(0) }
+    var startupVisible by rememberSaveable { mutableStateOf(true) }
+    LaunchedEffect(loaded) {
+        if (loaded && startupVisible) {
+            startupStage = 1
+            delay(1500)
+            startupVisible = false
+        }
+    }
+
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -362,10 +374,14 @@ fun NexusApp(
                             )
                             // the terminal pins its own key bar above the keyboard
                             .then(if (route == Routes.TERMINAL) Modifier else Modifier.imePadding()),
-                        enterTransition = { fadeIn(tween(220)) + slideInVertically(tween(260)) { it / 24 } },
-                        exitTransition = { fadeOut(tween(160)) },
-                        popEnterTransition = { fadeIn(tween(220)) },
-                        popExitTransition = { fadeOut(tween(160)) + slideOutVertically(tween(220)) { it / 24 } }
+                        enterTransition = {
+                            fadeIn(tween(190)) + slideInVertically(
+                                animationSpec = spring(dampingRatio = 0.9f, stiffness = 420f)
+                            ) { it / 32 }
+                        },
+                        exitTransition = { fadeOut(tween(140)) },
+                        popEnterTransition = { fadeIn(tween(190)) + slideInVertically(tween(210)) { -it / 36 } },
+                        popExitTransition = { fadeOut(tween(140)) + slideOutVertically(tween(180)) { it / 36 } }
                     ) {
                         composable(Routes.HOME) {
                             HomeScreen(
@@ -652,19 +668,8 @@ fun NexusApp(
             NoticesSheet(notices = notices, onClear = vm::clearNotices, onDismiss = { showNotices = false })
         }
 
-        if (!loaded) {
-            Box(
-                Modifier.fillMaxSize().background(Nx.Bg),
-                contentAlignment = Alignment.Center
-            ) {
-                NexusBackdrop(wallpaper = true)
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    NexusLoader(size = 92.dp)
-                    androidx.compose.foundation.layout.Spacer(Modifier.height(22.dp))
-                    Text("Nexus SSH", color = Nx.Text, fontSize = 24.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
-                    Text("Preparing your workspace…", color = Nx.Muted, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
-                }
-            }
+        if (!loaded || startupVisible) {
+            StartupExperience(if (!loaded) 0 else startupStage)
         }
 
         if (locked && appLock) {

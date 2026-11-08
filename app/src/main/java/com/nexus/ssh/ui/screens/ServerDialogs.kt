@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -40,6 +42,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.animateContentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -357,7 +360,13 @@ private val noticeFormat = SimpleDateFormat("HH:mm:ss", Locale.US)
 @Composable
 fun NoticesSheet(notices: List<AppNotice>, onClear: () -> Unit, onDismiss: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Nx.SurfaceHigh) {
-        Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 24.dp).navigationBarsPadding()) {
+        Column(
+            Modifier.fillMaxWidth()
+                .animateContentSize(tween(240))
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 16.dp)
+                .navigationBarsPadding()
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Activity", color = Nx.Text, fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 if (notices.isNotEmpty()) TextButton(onClick = onClear) { Text("Clear", color = LocalAccent.current) }
@@ -367,11 +376,30 @@ fun NoticesSheet(notices: List<AppNotice>, onClear: () -> Unit, onDismiss: () ->
                     EmptyState(Icons.Rounded.Notifications, "All quiet", "Connection events, transfers and errors will show up here.")
                 }
             } else {
-                LazyColumn(Modifier.height(360.dp)) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 520.dp),
+                    contentPadding = PaddingValues(bottom = 20.dp)
+                ) {
                     items(notices, key = { it.id }) { n ->
-                        Row(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-                            Text(noticeFormat.format(Date(n.time)), color = Nx.Muted, fontSize = 12.sp, fontFamily = GeistMonoFamily, modifier = Modifier.width(66.dp))
-                            Text(n.text, color = Nx.Text, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                        Row(
+                            Modifier.fillMaxWidth().animateContentSize(tween(180)).padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Text(
+                                noticeFormat.format(Date(n.time)),
+                                color = Nx.Muted,
+                                fontSize = 11.sp,
+                                fontFamily = GeistMonoFamily,
+                                modifier = Modifier.width(76.dp).padding(top = 2.dp)
+                            )
+                            Text(
+                                text = n.text,
+                                color = Nx.Text,
+                                fontSize = 14.sp,
+                                lineHeight = 20.sp,
+                                softWrap = true,
+                                modifier = Modifier.weight(1f)
+                            )
                         }
                     }
                 }
@@ -414,9 +442,9 @@ fun LockScreen(onUnlock: () -> Unit) {
                 )
             }
             Spacer(Modifier.height(28.dp))
-            Text("Welcome back", color = Nx.Text, fontSize = 27.sp, fontWeight = FontWeight.Bold)
+            Text("Unlock Nexus SSH", color = Nx.Text, fontSize = 27.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(8.dp))
-            Text("Unlock Nexus SSH to access your servers", color = Nx.Muted, fontSize = 14.sp)
+            Text("Use your device authentication or PIN", color = Nx.Muted, fontSize = 14.sp)
             Spacer(Modifier.height(30.dp))
             Box(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp))

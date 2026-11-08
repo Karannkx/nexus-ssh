@@ -100,7 +100,7 @@ fun ServersScreen(
     Box(
         Modifier
             .fillMaxSize()
-            .background(Color(0x99000000))
+            .background(Color(0xA6000000))
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onClose() }
     ) {
         Column(
@@ -109,7 +109,7 @@ fun ServersScreen(
                 .fillMaxWidth(0.90f)
                 .widthIn(max = 420.dp)
                 .clip(RoundedCornerShape(topEnd = 34.dp, bottomEnd = 34.dp))
-                .background(Color(0xF2121419))
+                .background(Color(0xF2161A1D))
                 .border(
                     1.dp,
                     Nx.Border.copy(alpha = 0.8f),
@@ -122,14 +122,14 @@ fun ServersScreen(
             Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 18.dp), verticalAlignment = Alignment.CenterVertically) {
                 NexusLogo(size = 42.dp)
                 Spacer(Modifier.width(12.dp))
-                Text("Nexus SSH", color = Nx.Text, fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Text("Nexus SSH", color = Color(0xFFF2F7F3), fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 IconButton(onClick = onClose) {
-                    Icon(Icons.Rounded.Close, contentDescription = "Close", tint = Nx.Text)
+                    Icon(Icons.Rounded.Close, contentDescription = "Close", tint = Color(0xFFDCE8DF))
                 }
             }
 
             Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                SectionLabel("Servers", Modifier.weight(1f))
+                Text("SERVERS", color = Color(0xFFA9B9AE), fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp, modifier = Modifier.weight(1f))
                 Box(
                     Modifier
                         .size(38.dp)
@@ -146,9 +146,9 @@ fun ServersScreen(
                 if (servers.isEmpty()) {
                     item {
                         Column(Modifier.fillMaxWidth().padding(vertical = 20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("No servers yet", color = Nx.Text, fontWeight = FontWeight.SemiBold)
+                            Text("No servers yet", color = Color(0xFFF0F5F1), fontWeight = FontWeight.SemiBold)
                             Spacer(Modifier.height(4.dp))
-                            Text("Add one to get started.", color = Nx.Muted, fontSize = 13.sp)
+                            Text("Add one to get started.", color = Color(0xFFADB9B0), fontSize = 13.sp)
                             Spacer(Modifier.height(12.dp))
                             PrimaryButton("Add server", onAdd)
                         }
@@ -179,8 +179,8 @@ fun ServersScreen(
                         Icon(spec.icon, contentDescription = spec.label, tint = spec.tint, modifier = Modifier.size(26.dp))
                         Spacer(Modifier.width(14.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(server.name, color = Nx.Text, fontSize = 17.sp, fontWeight = FontWeight.Medium, maxLines = 1)
-                            Text("${server.username}@${server.hostname} · ${relativeTime(server.lastConnectedAt)}", color = Nx.Muted, fontSize = 12.sp, maxLines = 1)
+                            Text(server.name, color = Color(0xFFF0F5F1), fontSize = 17.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                            Text("${server.username}@${server.hostname} · ${relativeTime(server.lastConnectedAt)}", color = Color(0xFF9EADA3), fontSize = 12.sp, maxLines = 1)
                         }
                         IconButton(onClick = { menuFor = server }) {
                             Icon(Icons.Rounded.MoreVert, contentDescription = "Server options", tint = Nx.Text)
@@ -192,7 +192,7 @@ fun ServersScreen(
                     Spacer(Modifier.height(14.dp))
                     Box(Modifier.fillMaxWidth().height(1.dp).background(Nx.Border.copy(alpha = 0.7f)))
                     Spacer(Modifier.height(16.dp))
-                    SectionLabel("Favorites")
+                    Text("FAVORITES", color = Color(0xFFA9B9AE), fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
                     Spacer(Modifier.height(6.dp))
                 }
                 items(favorites, key = { (if (it.custom) "c:" else "d:") + it.label + (it.path ?: "") }) { fav ->
@@ -204,12 +204,12 @@ fun ServersScreen(
                             .padding(start = 12.dp, top = 4.dp, bottom = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Rounded.Folder, contentDescription = null, tint = Nx.Muted, modifier = Modifier.size(24.dp))
+                        Icon(Icons.Rounded.Folder, contentDescription = null, tint = Color(0xFF91A49A), modifier = Modifier.size(24.dp))
                         Spacer(Modifier.width(16.dp))
-                        Text(fav.label, color = Nx.Text, fontSize = 16.sp, modifier = Modifier.weight(1f), maxLines = 1)
+                        Text(fav.label, color = Color(0xFFE2ECE5), fontSize = 16.sp, modifier = Modifier.weight(1f), maxLines = 1)
                         if (fav.custom && fav.path != null) {
                             IconButton(onClick = { onRemoveFavorite(fav.path) }) {
-                                Icon(Icons.Rounded.Close, contentDescription = "Remove favorite", tint = Nx.Muted, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Rounded.Close, contentDescription = "Remove favorite", tint = Color(0xFF9EADA3), modifier = Modifier.size(18.dp))
                             }
                         } else {
                             Spacer(Modifier.height(40.dp))
@@ -227,9 +227,9 @@ fun ServersScreen(
                     .padding(horizontal = 16.dp, vertical = 15.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Rounded.Tune, contentDescription = null, tint = LocalAccent.current)
+                Icon(Icons.Rounded.Tune, contentDescription = null, tint = Color(0xFF218B55))
                 Spacer(Modifier.width(14.dp))
-                Text("Manage Servers", color = Nx.Text, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                Text("Manage Servers", color = Color(0xFF17251C), fontSize = 16.sp, fontWeight = FontWeight.Medium)
             }
         }
     }
