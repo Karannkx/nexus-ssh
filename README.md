@@ -92,10 +92,32 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 > 📦 The debug build uses the package id `com.nexus.ssh.debug`, so it can live next to a release build.
 
-### 🤖 4. Get an APK from CI (no setup needed)
+### 🤖 4. CI/CD pipeline (GitHub Actions)
 
-Every push and pull request runs the **Android CI** workflow: unit tests, Android lint, then a debug APK build. Version tags (`v*`) also trigger a release APK build and GitHub Release upload.
-Open the **Actions** tab → latest run → download the **`nexus-ssh-apk`** artifact.
+The workflow is split into three connected jobs. GitHub Actions displays them as separate boxes connected by `needs` dependencies:
+
+```mermaid
+flowchart LR
+    A["01 · Test & Lint"] --> B["02 · Debug Build"]
+    B --> C["03 · Release Build"]
+```
+
+- **Test & Lint** runs the JVM unit tests and Android lint, then uploads reports.
+- **Debug Build** runs only after verification succeeds and uploads `nexus-ssh-debug-apk`.
+- **Release Build** runs only for version tags such as `v1.0.1`, after the debug build succeeds; it uploads `nexus-ssh-release-apk` and publishes a GitHub Release.
+
+On ordinary pushes and pull requests, the pipeline stops after the Debug Build. To create a release, push a version tag:
+
+```bash
+git tag v1.0.1
+git push origin v1.0.1
+```
+
+Open the **Actions** tab → latest workflow run → **Artifacts** to download the APK and test/build logs.
+
+**Android SDK note:** CI installs only `platform-tools`. The old standalone SDK package named `tools` has been removed from Google's SDK repository; command-line tools are installed by the setup action, and Android Gradle Plugin resolves the required platform/build-tools packages.
+
+**Signing note:** The current `release` build type still uses the Android debug signing configuration for test distribution. Configure a private upload keystore through GitHub Secrets before publishing to Google Play. Never commit a keystore or passwords to the repository.
 
 ---
 
