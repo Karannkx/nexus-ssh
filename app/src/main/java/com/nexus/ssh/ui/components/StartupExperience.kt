@@ -14,6 +14,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material3.Icon
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,13 +41,16 @@ fun StartupExperience(stage: Int) {
             Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF06291D), Color(0xFF0B4A32), Color(0xFF071D16)))))
             NexusBackdrop(wallpaper = true)
             Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(Modifier.size(112.dp).clip(RoundedCornerShape(30.dp)).background(Color(0x1FFFFFFF)), contentAlignment = Alignment.Center) {
-                    NexusLogo(size = 92.dp)
-                }
-                Spacer(Modifier.height(22.dp))
+                // The first visible frame is the branded initializing screen; no oversized launcher tile.
+                Image(
+                    painter = painterResource(com.nexus.ssh.R.drawable.nexus_mark_white),
+                    contentDescription = "Nexus SSH",
+                    modifier = Modifier.size(104.dp)
+                )
+                Spacer(Modifier.height(20.dp))
                 Text("Nexus SSH", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold)
                 Text("Secure  •  Manage  •  Anywhere", color = Color(0xFFD4E9DA), fontSize = 13.sp)
-                Spacer(Modifier.height(44.dp))
+                Spacer(Modifier.height(42.dp))
                 LinearProgressIndicator(progress = { progress }, modifier = Modifier.width(150.dp).height(5.dp).clip(CircleShape), color = Color(0xFF8DE0A8), trackColor = Color(0x6654A879))
                 Spacer(Modifier.height(12.dp))
                 Text("Initializing…", color = Color(0xFFD4E9DA), fontSize = 12.sp)

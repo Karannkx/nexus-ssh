@@ -3,7 +3,6 @@ package com.nexus.ssh
 import android.graphics.Color as AndroidColor
 import android.os.Build
 import android.os.Bundle
-import android.os.SystemClock
 import android.view.WindowManager
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -126,11 +125,10 @@ class MainActivity : FragmentActivity() {
     private val vm: NexusViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val splash = installSplashScreen()
+        installSplashScreen()
         super.onCreate(savedInstanceState)
-        val started = SystemClock.uptimeMillis()
-        // keep the splash up until the saved servers are loaded (but never longer than 2.5 s)
-        splash.setKeepOnScreenCondition { !vm.serversLoaded.value && SystemClock.uptimeMillis() - started < 2500 }
+        // Let Compose render the branded initializing screen immediately; do not hold the
+        // platform splash (which otherwise displays the launcher icon) while data loads.
 
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(AndroidColor.TRANSPARENT, AndroidColor.TRANSPARENT),
@@ -147,7 +145,8 @@ class MainActivity : FragmentActivity() {
 
         setContent {
             val accentKey by vm.prefs.accent.collectAsState()
-            NexusTheme(accentColor(accentKey)) {
+            val darkTheme by vm.prefs.darkTheme.collectAsState()
+            NexusTheme(accentColor(accentKey), dark = darkTheme) {
                 NexusApp(
                     vm = vm,
                     canAuthenticate = ::canAuthenticate,
@@ -355,7 +354,7 @@ fun NexusApp(
                 }
             },
             bottomBar = {
-                if (!wide && !imeVisible && route != Routes.SERVERS) {
+                if (!wide && !imeVisible) {
                     FloatingNavBar(items = navItems, selectedRoute = route, onSelect = { navigateTo(it.route) })
                 }
             }

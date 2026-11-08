@@ -116,7 +116,7 @@ fun StatusDot(color: Color, modifier: Modifier = Modifier, size: Dp = 10.dp) {
 @Composable
 fun NexusLogo(modifier: Modifier = Modifier, size: Dp = 46.dp) {
     Image(
-        painter = painterResource(R.drawable.ic_nexus_mark),
+        painter = painterResource(R.drawable.nexus_mark_green),
         contentDescription = "Nexus SSH",
         modifier = modifier.size(size)
     )
@@ -489,14 +489,9 @@ fun Sparkline(values: List<Float>, color: Color, modifier: Modifier = Modifier, 
             moveTo(px(0), py(values[0]))
             for (i in 1 until n) lineTo(px(i), py(values[i]))
         }
-        val fill = Path().apply {
-            addPath(line)
-            lineTo(w, h)
-            lineTo(0f, h)
-            close()
-        }
-        drawPath(fill, Brush.verticalGradient(listOf(color.copy(alpha = 0.28f), Color.Transparent)))
-        drawPath(line, color, style = Stroke(2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+        // Flat, crisp telemetry trace: no bloom/glow fill, keeping the monitor restrained
+        // and reducing overdraw on lower-end devices.
+        drawPath(line, color.copy(alpha = 0.92f), style = Stroke(1.8.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
     }
 }
 

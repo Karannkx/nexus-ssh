@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +16,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -57,11 +60,13 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.nexus.ssh.AppNotice
 import com.nexus.ssh.core.database.AuthType
 import com.nexus.ssh.core.database.ServerEntity
@@ -111,27 +116,48 @@ fun ServerEditorDialog(
     val editing = initial != null
 
     val clipboard = LocalClipboardManager.current
+    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = Modifier.fillMaxWidth().widthIn(max = 560.dp).padding(horizontal = 8.dp).imePadding().navigationBarsPadding(),
+        properties = DialogProperties(usePlatformDefaultWidth = false),
         shape = DialogShape,
         containerColor = Nx.SurfaceHigh,
         title = { Text(if (editing) "Edit server" else "Add server", fontWeight = FontWeight.Bold) },
         text = {
-            Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                Modifier.fillMaxWidth().heightIn(max = screenHeight * 0.62f).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 OutlinedTextField(
                     value = name, onValueChange = { name = it }, label = { Text("Name (optional)") },
                     singleLine = true, modifier = Modifier.fillMaxWidth(), colors = nexusFieldColors(), shape = RoundedCornerShape(14.dp)
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = host, onValueChange = { host = it.trim() }, label = { Text("Hostname / IP") },
-                        singleLine = true, modifier = Modifier.weight(0.66f), colors = nexusFieldColors(), shape = RoundedCornerShape(14.dp)
-                    )
-                    OutlinedTextField(
-                        value = port, onValueChange = { port = it.filter(Char::isDigit).take(5) }, label = { Text("Port") },
-                        singleLine = true, modifier = Modifier.weight(0.34f), colors = nexusFieldColors(), shape = RoundedCornerShape(14.dp)
-                    )
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    if (maxWidth < 380.dp) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(
+                                value = host, onValueChange = { host = it.trim() }, label = { Text("Hostname / IP") },
+                                singleLine = true, modifier = Modifier.fillMaxWidth(), colors = nexusFieldColors(), shape = RoundedCornerShape(14.dp)
+                            )
+                            OutlinedTextField(
+                                value = port, onValueChange = { port = it.filter(Char::isDigit).take(5) }, label = { Text("Port") },
+                                singleLine = true, modifier = Modifier.width(132.dp), colors = nexusFieldColors(), shape = RoundedCornerShape(14.dp)
+                            )
+                        }
+                    } else {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(
+                                value = host, onValueChange = { host = it.trim() }, label = { Text("Hostname / IP") },
+                                singleLine = true, modifier = Modifier.weight(0.68f), colors = nexusFieldColors(), shape = RoundedCornerShape(14.dp)
+                            )
+                            OutlinedTextField(
+                                value = port, onValueChange = { port = it.filter(Char::isDigit).take(5) }, label = { Text("Port") },
+                                singleLine = true, modifier = Modifier.weight(0.32f), colors = nexusFieldColors(), shape = RoundedCornerShape(14.dp)
+                            )
+                        }
+                    }
                 }
                 OutlinedTextField(
                     value = user, onValueChange = { user = it.trim() }, label = { Text("Username") },

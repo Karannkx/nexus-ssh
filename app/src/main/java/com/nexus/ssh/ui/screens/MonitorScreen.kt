@@ -114,9 +114,8 @@ private fun MetricCard(
 ) {
     Column(
         modifier
-            .glass(RoundedCornerShape(20.dp), fill = 0.82f)
-            .background(color.copy(alpha = 0.07f))
-            .border(1.dp, color.copy(alpha = 0.28f), RoundedCornerShape(20.dp))
+            .glass(RoundedCornerShape(20.dp), fill = 0.96f)
+            .border(1.dp, Nx.Border, RoundedCornerShape(20.dp))
             .padding(14.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

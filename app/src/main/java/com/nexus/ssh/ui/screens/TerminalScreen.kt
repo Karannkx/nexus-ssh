@@ -256,18 +256,47 @@ fun TerminalScreen(
             val rows = ((maxHeight.value - 16f) / (fontSize * 1.35f)).toInt().coerceIn(6, 120)
             LaunchedEffect(cols, rows) { onResize(cols, rows) }
 
-            LazyColumn(state = listState, modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 8.dp)) {
-                itemsIndexed(lines) { index, line ->
-                    if (index == lines.lastIndex && connected) {
-                        CursorLine(line, cursor, fontSize)
-                    } else {
-                        Text(
-                            text = line.ifEmpty { " " },
-                            color = Color(0xFFE2E8F0),
-                            fontFamily = GeistMonoFamily,
-                            fontSize = fontSize.sp,
-                            lineHeight = (fontSize * 1.35f).sp
-                        )
+            Column(Modifier.fillMaxSize()) {
+                Row(
+                    Modifier.fillMaxWidth()
+                        .background(Color(0xFF111916))
+                        .padding(horizontal = 13.dp, vertical = 9.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                        listOf(Color(0xFFFF6259), Color(0xFFFFC04D), Color(0xFF35C96F)).forEach { dot ->
+                            Box(Modifier.size(8.dp).clip(RoundedCornerShape(50)).background(dot))
+                        }
+                    }
+                    Text(
+                        "  ${serverName.ifBlank { "remote" }}  ·  SSH",
+                        color = Color(0xFF9BAAA1),
+                        fontFamily = GeistMonoFamily,
+                        fontSize = 11.sp,
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Box(Modifier.size(7.dp).clip(RoundedCornerShape(50))
+                        .background(if (connected) Color(0xFF39D98A) else Color(0xFF718078)))
+                }
+                Box(Modifier.fillMaxWidth().heightIn(min = 1.dp).background(Color(0xFF26332C)))
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(1.dp)
+                ) {
+                    itemsIndexed(lines) { index, line ->
+                        if (index == lines.lastIndex && connected) {
+                            CursorLine(line, cursor, fontSize)
+                        } else {
+                            Text(
+                                text = line.ifEmpty { " " },
+                                color = Color(0xFFD8E4DC),
+                                fontFamily = GeistMonoFamily,
+                                fontSize = fontSize.sp,
+                                lineHeight = (fontSize * 1.42f).sp
+                            )
+                        }
                     }
                 }
             }

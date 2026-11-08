@@ -47,6 +47,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 // ---------------------------------------------------------------- UI state models
 
@@ -257,9 +258,27 @@ class NexusViewModel(private val app: Application) : AndroidViewModel(app) {
         val session = SshTerminalSession(ssh)
         tab.session = session
         tab.job = viewModelScope.launch {
-            session.terminalOutput.collect { chunk ->
-                tab.buffer.write(chunk)
-                if (_activeTab.value == tab.id) publishActive()
+            // Drain SSH output in short batches. This avoids a Compose snapshot/recomposition
+            // for every tiny network packet while keeping interactive output responsive.
+            val chunks = Channel<String>(Channel.UNLIMITED)
+            val reader = launch { session.terminalOutput.collect { chunks.send(it) } }
+            val pending = StringBuilder()
+            try {
+                while (isActive) {
+                    val first = chunks.receiveCatching().getOrNull() ?: break
+                    pending.setLength(0)
+                    pending.append(first)
+                    while (true) {
+                        val next = withTimeoutOrNull(24) { chunks.receive() } ?: break
+                        pending.append(next)
+                        if (pending.length >= 16_384) break
+                    }
+                    tab.buffer.write(pending.toString())
+                    if (_activeTab.value == tab.id) publishActive()
+                }
+            } finally {
+                reader.cancel()
+                chunks.close()
             }
         }
         viewModelScope.launch {

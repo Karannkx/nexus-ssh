@@ -115,6 +115,7 @@ fun SettingsScreen(
 ) {
     val name by prefs.displayName.collectAsState()
     val wallpaper by prefs.showWallpaper.collectAsState()
+    val darkTheme by prefs.darkTheme.collectAsState()
     val accentKey by prefs.accent.collectAsState()
     val fontSize by prefs.terminalFontSize.collectAsState()
     val refresh by prefs.refreshSeconds.collectAsState()
@@ -151,7 +152,9 @@ fun SettingsScreen(
 
         SectionHeader("Appearance")
         GroupSurface {
-            SwitchRow(Icons.Rounded.Wallpaper, Nx.Purple, "Wallpaper", "Wave background on Home, Servers and Apps", wallpaper) { prefs.setShowWallpaper(it) }
+            SwitchRow(Icons.Rounded.Wallpaper, Nx.Purple, "Wallpaper", "Show background wallpaper", wallpaper) { prefs.setShowWallpaper(it) }
+            RowDivider()
+            SwitchRow(Icons.Rounded.Palette, Nx.Blue, "Dark theme", "Use the dark interface and monochrome wallpaper", darkTheme) { prefs.setDarkTheme(it) }
             RowDivider()
             Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconBadge(Icons.Rounded.Palette, Nx.Magenta)

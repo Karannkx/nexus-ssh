@@ -18,6 +18,9 @@ class AppPrefs(context: Context) {
     private val _showWallpaper = MutableStateFlow(sp.getBoolean("wallpaper", true))
     val showWallpaper: StateFlow<Boolean> = _showWallpaper
 
+    private val _darkTheme = MutableStateFlow(sp.getBoolean("dark_theme", false))
+    val darkTheme: StateFlow<Boolean> = _darkTheme
+
     private val _accent = MutableStateFlow(sp.getString("accent", "green") ?: "green")
     val accent: StateFlow<String> = _accent
 
@@ -57,6 +60,7 @@ class AppPrefs(context: Context) {
 
     fun setDisplayName(v: String) { sp.edit().putString("display_name", v.trim()).apply(); _displayName.value = v.trim() }
     fun setShowWallpaper(v: Boolean) { sp.edit().putBoolean("wallpaper", v).apply(); _showWallpaper.value = v }
+    fun setDarkTheme(v: Boolean) { sp.edit().putBoolean("dark_theme", v).apply(); _darkTheme.value = v }
     fun setAccent(v: String) { sp.edit().putString("accent", v).apply(); _accent.value = v }
     fun setAppLock(v: Boolean) { sp.edit().putBoolean("app_lock", v).apply(); _appLock.value = v }
     fun setSecureScreen(v: Boolean) { sp.edit().putBoolean("secure_screen", v).apply(); _secureScreen.value = v }
