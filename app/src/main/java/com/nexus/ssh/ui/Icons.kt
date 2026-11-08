@@ -1,21 +1,31 @@
 package com.nexus.ssh.ui
 
-import com.adamglin.PhosphorIcons
-import com.adamglin.phosphoricons.Regular
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Terminal
+import androidx.compose.material.icons.rounded.MonitorHeart
+import androidx.compose.material.icons.rounded.GridView
+import androidx.compose.material.icons.rounded.FormatListBulleted
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Inventory2
+import androidx.compose.material.icons.rounded.Dns
+import androidx.compose.material.icons.rounded.Public
+import androidx.compose.material.icons.rounded.LocalFireDepartment
+import androidx.compose.material.icons.rounded.Storage
+import androidx.compose.material.icons.rounded.Cloud
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.vector.ImageVector
 
-/** Phosphor Regular family is used consistently for the primary launcher / navigation glyphs. */
-val PromptIcon: ImageVector = PhosphorIcons.Regular.Terminal
-val PulseIcon: ImageVector = PhosphorIcons.Regular.Pulse
-val GridIcon: ImageVector = PhosphorIcons.Regular.SquaresFour
-val ListIcon: ImageVector = PhosphorIcons.Regular.ListBullets
-val DocIcon: ImageVector = PhosphorIcons.Regular.FileText
-val CubeIcon: ImageVector = PhosphorIcons.Regular.Cube
-val ServersIcon: ImageVector = PhosphorIcons.Regular.HardDrives
+/** Consistent rounded vector glyphs for the launcher and navigation. */
+val PromptIcon: ImageVector = Icons.Rounded.Terminal
+val PulseIcon: ImageVector = Icons.Rounded.MonitorHeart
+val GridIcon: ImageVector = Icons.Rounded.GridView
+val ListIcon: ImageVector = Icons.Rounded.FormatListBulleted
+val DocIcon: ImageVector = Icons.Rounded.Description
+val CubeIcon: ImageVector = Icons.Rounded.Inventory2
+val ServersIcon: ImageVector = Icons.Rounded.Dns
 
 /** Docker's whale is a brand-specific mark, so keep this small custom vector. */
 private fun dockerWhaleIcon(): ImageVector = ImageVector.Builder("DockerWhale", 24.dp, 24.dp, 24f, 24f).apply {
@@ -40,11 +50,11 @@ val WhaleIcon: ImageVector = dockerWhaleIcon()
 class ServerIconSpec(val key: String, val icon: ImageVector, val tint: Color, val label: String)
 
 val ServerIconOptions = listOf(
-    ServerIconSpec("globe", PhosphorIcons.Regular.Globe, Nx.Blue, "Web"),
-    ServerIconSpec("fire", PhosphorIcons.Regular.Fire, Color(0xFFFF6B3D), "Hot"),
-    ServerIconSpec("db", PhosphorIcons.Regular.Database, Nx.Green, "Database"),
+    ServerIconSpec("globe", Icons.Rounded.Public, Nx.Blue, "Web"),
+    ServerIconSpec("fire", Icons.Rounded.LocalFireDepartment, Color(0xFFFF6B3D), "Hot"),
+    ServerIconSpec("db", Icons.Rounded.Storage, Nx.Green, "Database"),
     ServerIconSpec("cube", CubeIcon, Nx.Amber, "Backup"),
-    ServerIconSpec("cloud", PhosphorIcons.Regular.Cloud, Nx.Purple, "Cloud"),
+    ServerIconSpec("cloud", Icons.Rounded.Cloud, Nx.Purple, "Cloud"),
     ServerIconSpec("server", ServersIcon, Nx.Cyan, "Server")
 )
 

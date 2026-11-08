@@ -225,7 +225,7 @@ Please include your Android version, device model, what you expected vs. what ha
 - **Geist Sans** is used for general UI text and controls.
 - **Geist Mono** is used for terminal output, IP addresses, paths and other technical values.
 - **Bricolage Grotesque** is reserved for display and screen headings so it adds personality without hurting dense UI readability.
-- **Phosphor Icons** are integrated through the Android artifact `com.adamglin:phosphor-icon-android:1.0.0` (`com.adamglin.PhosphorIcons` API) for the primary navigation and server identity icon set; legacy Material glyphs remain only where a screen-specific symbol has not yet been migrated.
+- **Rounded Compose vector icons** from `material-icons-extended` currently power the primary navigation and server identity set to keep the Android build stable. The documented Phosphor Compose artifact `com.adamglin:phosphor-icon:1.0.0` remains declared, but its generated icon names are not yet wired into the UI.
 - Font binaries are downloaded at build time from the upstream Google Fonts repository into generated Android resources, then bundled locally in the APK. No font is fetched at runtime.
 - See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for upstream sources and licenses.
 
@@ -253,13 +253,6 @@ Made with ❤️ by [Karannkx](https://github.com/Karannkx)
 </div>
 
 
-### CI troubleshooting: Phosphor Compose icons
+### CI troubleshooting: Compose icons
 
-The Android target uses `com.adamglin:phosphor-icon-android:1.0.0`. Import the API as:
-
-```kotlin
-import com.adamglin.PhosphorIcons
-import com.adamglin.phosphoricons.Regular
-```
-
-Do not import `com.adamglin.phosphoricons.PhosphorIcons`; that package path does not contain the top-level icon provider and causes `Unresolved reference: PhosphorIcons` during `compileDebugKotlin`. The CI preflight checks the artifact coordinate and imports before Gradle compilation.
+The project keeps the documented `com.adamglin:phosphor-icon:1.0.0` dependency available, but the current screens use `material-icons-extended` rounded vectors. This avoids referencing generated Phosphor symbol names that are not present in the resolved artifact. Reintroduce Phosphor icons only after verifying the exact published API symbols against the resolved dependency.

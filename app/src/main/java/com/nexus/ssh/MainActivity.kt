@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.only
@@ -34,6 +35,10 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
@@ -71,8 +76,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.adamglin.PhosphorIcons
-import com.adamglin.phosphoricons.Regular
 import com.nexus.ssh.core.database.ServerEntity
 import com.nexus.ssh.core.prefs.WebBookmark
 import com.nexus.ssh.core.ssh.ConnectionState
@@ -182,16 +185,16 @@ private val TOP_ROUTES = setOf(Routes.HOME, Routes.SERVERS, Routes.APPS, Routes.
 private val WALLPAPER_ROUTES = setOf(Routes.HOME, Routes.SERVERS, Routes.APPS, Routes.SETTINGS)
 
 private val TOP_NAV = listOf(
-    NavItemSpec(Routes.HOME, PhosphorIcons.Regular.House, "Home"),
+    NavItemSpec(Routes.HOME, Icons.Rounded.Home, "Home"),
     NavItemSpec(Routes.SERVERS, ServersIcon, "Servers"),
     NavItemSpec(Routes.APPS, GridIcon, "Apps"),
-    NavItemSpec(Routes.SETTINGS, PhosphorIcons.Regular.Gear, "Settings")
+    NavItemSpec(Routes.SETTINGS, Icons.Rounded.Settings, "Settings")
 )
 
 private val TOOL_NAV = listOf(
-    NavItemSpec(Routes.HOME, PhosphorIcons.Regular.House, "Home"),
+    NavItemSpec(Routes.HOME, Icons.Rounded.Home, "Home"),
     NavItemSpec(Routes.SERVERS, ServersIcon, "Servers"),
-    NavItemSpec(Routes.FILES, PhosphorIcons.Regular.Folder, "Files"),
+    NavItemSpec(Routes.FILES, Icons.Rounded.Folder, "Files"),
     NavItemSpec(Routes.MONITOR, PulseIcon, "Monitor"),
     NavItemSpec(Routes.DOCKER, CubeIcon, "Docker")
 )

@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import com.nexus.ssh.LogSource
 import com.nexus.ssh.LogsState
 import com.nexus.ssh.ui.Nx
+import com.nexus.ssh.ui.LocalAccent
 import com.nexus.ssh.ui.components.EmptyState
 import com.nexus.ssh.ui.components.ErrorBox
 import com.nexus.ssh.ui.components.LoadingBar
