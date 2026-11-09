@@ -52,7 +52,7 @@ fun StartupExperience(stage: Int) {
                 Image(
                     painter = painterResource(com.nexus.ssh.R.drawable.nexus_mark_white),
                     contentDescription = "Nexus SSH",
-                    modifier = Modifier.size(104.dp)
+                    modifier = Modifier.size(116.dp)
                 )
                 Spacer(Modifier.height(20.dp))
                 Text("Nexus SSH", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold)

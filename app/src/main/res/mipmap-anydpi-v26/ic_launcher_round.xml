@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@drawable/ic_transparent" />
-    <foreground android:drawable="@drawable/nexus_mark_green" />
-    <monochrome android:drawable="@drawable/nexus_mark_green" />
+    <foreground android:drawable="@drawable/nexus_launcher_mark" />
+    <monochrome android:drawable="@drawable/ic_nexus_mark" />
 </adaptive-icon>

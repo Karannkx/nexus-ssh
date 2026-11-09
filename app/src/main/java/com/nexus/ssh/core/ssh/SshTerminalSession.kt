@@ -6,7 +6,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -41,8 +40,10 @@ class SshTerminalSession(
         scope.launch {
             for (first in inputQueue) {
                 val batch = StringBuilder(first)
-                withTimeoutOrNull(5) {
-                    while (batch.length < 4096) batch.append(inputQueue.receive())
+                // Drain any keystrokes already queued without an artificial debounce delay.
+                while (batch.length < 4096) {
+                    val next = inputQueue.tryReceive().getOrNull() ?: break
+                    batch.append(next)
                 }
                 try {
                     outputStream?.write(batch.toString().toByteArray(Charsets.UTF_8))

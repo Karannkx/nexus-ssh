@@ -181,23 +181,22 @@ fun TerminalScreen(
             showKeyboard()
         }
     }
-    LaunchedEffect(lines.size, lines.lastOrNull(), activeTab) {
+    LaunchedEffect(lines.size, activeTab) {
         if (lines.isNotEmpty()) {
-            delay(35)
             listState.scrollToItem(lines.lastIndex)
         }
     }
 
-    Column(Modifier.fillMaxSize().background(Color.Black)) {
+    Column(Modifier.fillMaxSize().background(Nx.Bg)) {
         Row(
-            Modifier.fillMaxWidth().background(Color.Black).statusBarsPadding().heightIn(min = 58.dp)
+            Modifier.fillMaxWidth().background(Nx.Bg).statusBarsPadding().heightIn(min = 58.dp)
                 .padding(horizontal = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back", tint = Color(0xFFE5E7EB)) }
             Column(Modifier.weight(1f)) {
-                Text("Terminal", color = Color.White, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
-                Text(serverName.ifBlank { "SSH session" }, color = Color(0xFF9CA3AF), fontSize = 11.sp, maxLines = 1)
+                Text("Terminal", color = Nx.Text, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
+                Text(serverName.ifBlank { "SSH session" }, color = Nx.Muted, fontSize = 11.sp, maxLines = 1)
             }
             IconButton(onClick = { showKeyboard() }, enabled = connected) {
                 Icon(Icons.Rounded.Keyboard, contentDescription = "Show keyboard", tint = if (connected) Color(0xFFB7C4BB) else Color(0xFF666666))
@@ -235,12 +234,12 @@ fun TerminalScreen(
                         Modifier
                             .heightIn(min = 40.dp)
                             .clip(RoundedCornerShape(14.dp))
-                            .background(if (sel) LocalAccent.current else Color(0xFF202020))
+                            .background(if (sel) LocalAccent.current else Nx.SurfaceHigh)
                             .clickable { onSelectTab(tab.id) }
                             .padding(start = 14.dp, end = if (tabs.size > 1) 4.dp else 14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(tab.title, color = if (sel) Color.White else Color(0xFFB8B8B8), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        Text(tab.title, color = if (sel) Color.White else Nx.Text, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                         if (tabs.size > 1) {
                             IconButton(onClick = { onCloseTab(tab.id) }, modifier = Modifier.size(34.dp)) {
                                 Icon(Icons.Rounded.Close, "Close tab", tint = if (sel) Color.White else Color(0xFFB8B8B8), modifier = Modifier.size(16.dp))
@@ -259,7 +258,7 @@ fun TerminalScreen(
             Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 6.dp)
+                .padding(horizontal = 12.dp, vertical = 8.dp)
                 .clip(RoundedCornerShape(18.dp))
                 .background(Color.Black)
                 .border(0.5.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(18.dp))
@@ -318,7 +317,7 @@ fun TerminalScreen(
             Modifier
                 .fillMaxWidth()
                 .imePadding()
-                .background(Color(0xFF090909))
+                .background(Nx.SurfaceHigh)
                 .horizontalScroll(rememberScrollState())
                 .padding(horizontal = 8.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -413,7 +412,7 @@ private fun KeyButton(label: String, active: Boolean, enabled: Boolean, onClick:
             .heightIn(min = 42.dp)
             .widthIn(min = 46.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(if (active) accent else Color(0xFF202020))
+            .background(if (active) accent else Nx.Surface)
             .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = 12.dp),
         contentAlignment = Alignment.Center

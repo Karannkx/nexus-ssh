@@ -51,21 +51,25 @@ object Nx {
     val Blue = Color(0xFF2388D8)
     val Cyan = Color(0xFF20B7C8)
     val Purple = Color(0xFF9876D7)
-    val Green = Color(0xFF218B55)
+    var Green by mutableStateOf(Color(0xFF218B55))
     val Magenta = Color(0xFFE34D8B)
     val Amber = Color(0xFFE59A24)
     val Red = Color(0xFFD94B55)
     var Terminal by mutableStateOf(Color(0xFF000000))
     var Border by mutableStateOf(Color(0xFFDDE5DC))
+    var Dark by mutableStateOf(false)
     val OnAccent = Color(0xFFFFFFFF)
 
     /** Keep legacy screen palette references in sync with the selected app appearance. */
     fun applyTheme(dark: Boolean) {
+        Dark = dark
+        Green = if (dark) Color(0xFF75A9F8) else Color(0xFF218B55)
         if (dark) {
-            Bg = Color(0xFF090D0A); BgTop = Color(0xFF0D120F)
-            Surface = Color(0xFF141B16); SurfaceHigh = Color(0xFF202A23)
-            Text = Color(0xFFE8F0E9); Muted = Color(0xFFACB9AF); Faint = Color(0xFF78877D)
-            Border = Color(0xFF35443A); Terminal = Color.Black
+            // Neutral graphite palette sampled from the supplied dark-mode reference.
+            Bg = Color(0xFF10121A); BgTop = Color(0xFF171923)
+            Surface = Color(0xFF20232D); SurfaceHigh = Color(0xFF292D38)
+            Text = Color(0xFFF2F3F7); Muted = Color(0xFFB2B7C4); Faint = Color(0xFF818897)
+            Border = Color(0xFF414653); Terminal = Color.Black
         } else {
             Bg = Color(0xFFF7F8F3); BgTop = Color(0xFFFBFCF8)
             Surface = Color.White; SurfaceHigh = Color(0xFFF0F3ED)
@@ -128,18 +132,18 @@ private fun Typography.withFonts(body: FontFamily, display: FontFamily) = Typogr
 fun NexusTheme(accent: Color = Nx.Green, dark: Boolean = false, content: @Composable () -> Unit) {
     SideEffect { Nx.applyTheme(dark) }
     val scheme = if (dark) darkColorScheme(
-        primary = accent,
-        onPrimary = Color(0xFF071A14),
-        secondary = Color(0xFF79D6A5),
-        onSecondary = Color(0xFF071A14),
-        background = Color(0xFF101411),
-        onBackground = Color(0xFFE8F0E9),
-        surface = Color(0xFF171D19),
-        onSurface = Color(0xFFE8F0E9),
-        surfaceVariant = Color(0xFF252E28),
-        onSurfaceVariant = Color(0xFFB2C0B5),
-        outline = Color(0xFF526258),
-        outlineVariant = Color(0xFF354139),
+        primary = Color(0xFF75A9F8),
+        onPrimary = Color(0xFF101521),
+        secondary = Color(0xFFB8C7E0),
+        onSecondary = Color(0xFF101521),
+        background = Color(0xFF10121A),
+        onBackground = Color(0xFFF2F3F7),
+        surface = Color(0xFF20232D),
+        onSurface = Color(0xFFF2F3F7),
+        surfaceVariant = Color(0xFF292D38),
+        onSurfaceVariant = Color(0xFFB2B7C4),
+        outline = Color(0xFF596171),
+        outlineVariant = Color(0xFF414653),
         error = Color(0xFFFF6B72)
     ) else lightColorScheme(
         primary = accent,
@@ -167,7 +171,8 @@ fun NexusTheme(accent: Color = Nx.Green, dark: Boolean = false, content: @Compos
     // "display size" is large) everything is scaled down uniformly instead of clipping or wrapping.
     val k = if (widthDp < 390) (widthDp / 390f).coerceAtLeast(0.78f) else 1f
     val density = Density(base.density * k, fontScale = base.fontScale.coerceIn(0.9f, 1.1f))
-    CompositionLocalProvider(LocalAccent provides accent, LocalDensity provides density) {
+    val effectiveAccent = if (dark) Color(0xFF75A9F8) else accent
+    CompositionLocalProvider(LocalAccent provides effectiveAccent, LocalDensity provides density) {
         MaterialTheme(
             colorScheme = scheme,
             typography = Typography().withFonts(GeistFamily, BricolageFamily),
@@ -214,12 +219,16 @@ fun NexusBackdrop(wallpaper: Boolean, modifier: Modifier = Modifier) {
                 modifier = Modifier.fillMaxSize().alpha(wp),
                 contentScale = ContentScale.Crop
             )
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .alpha(wp)
-                    .background(Brush.verticalGradient(listOf(Color(0x08FFFFFF), Color.Transparent, Color(0x12FFFFFF))))
-            )
+            if (!useDarkWallpaper) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .alpha(wp)
+                        .background(Brush.verticalGradient(listOf(Color(0x08FFFFFF), Color.Transparent, Color(0x12FFFFFF))))
+                )
+            } else {
+                Box(Modifier.fillMaxSize().alpha(wp).background(Color(0x16090B12)))
+            }
         }
     }
 }

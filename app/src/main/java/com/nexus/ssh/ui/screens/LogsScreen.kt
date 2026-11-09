@@ -80,20 +80,20 @@ fun LogsScreen(
         if (shown.isNotEmpty()) listState.scrollToItem(shown.lastIndex)
     }
 
-    Column(Modifier.fillMaxSize().background(Color.Black)) {
+    Column(Modifier.fillMaxSize().background(Nx.Bg)) {
         Row(
-            Modifier.fillMaxWidth().background(Color.Black).statusBarsPadding().heightIn(min = 58.dp).padding(horizontal = 8.dp),
+            Modifier.fillMaxWidth().background(Nx.Bg).statusBarsPadding().heightIn(min = 58.dp).padding(horizontal = 8.dp),
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
         ) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back", tint = Color.White) }
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back", tint = Nx.Text) }
             Column(Modifier.weight(1f)) {
-                Text("Logs", color = Color.White, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
-                Text(serverName.ifBlank { "Remote system logs" }, color = Color(0xFF9CA3AF), fontSize = 11.sp, maxLines = 1)
+                Text("Logs", color = Nx.Text, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
+                Text(serverName.ifBlank { "Remote system logs" }, color = Nx.Muted, fontSize = 11.sp, maxLines = 1)
             }
             IconButton(
                 onClick = { if (state.source != null) onLoadSource(state.source) else onLoadFile(path) },
                 enabled = connected
-            ) { Icon(Icons.Rounded.Refresh, contentDescription = "Refresh", tint = if (connected) Color(0xFFB7C4BB) else Color(0xFF666666)) }
+            ) { Icon(Icons.Rounded.Refresh, contentDescription = "Refresh", tint = if (connected) Nx.Text else Nx.Faint) }
         }
         if (!connected) {
             EmptyState(
@@ -114,12 +114,12 @@ fun LogsScreen(
                 val sel = state.source == src
                 Text(
                     src.label,
-                    color = if (sel) Color.White else Color(0xFFB8B8B8),
+                    color = if (sel) Color.White else Nx.Text,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
-                        .background(if (sel) LocalAccent.current else Color(0xFF242424))
+                        .background(if (sel) LocalAccent.current else Nx.SurfaceHigh)
                         .clickable { onLoadSource(src) }
                         .padding(horizontal = 14.dp, vertical = 7.dp)
                 )
@@ -127,12 +127,12 @@ fun LogsScreen(
             val fileSel = state.source == null
             Text(
                 "File",
-                color = if (fileSel) Color.White else Color(0xFFB8B8B8),
+                color = if (fileSel) Color.White else Nx.Text,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (fileSel) LocalAccent.current else Color(0xFF242424))
+                    .background(if (fileSel) LocalAccent.current else Nx.SurfaceHigh)
                     .clickable { onLoadFile(path) }
                     .padding(horizontal = 14.dp, vertical = 7.dp)
             )
@@ -146,12 +146,12 @@ fun LogsScreen(
                 singleLine = true,
                 shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = LocalAccent.current, unfocusedBorderColor = Color(0xFF454545),
-                    focusedTextColor = Color.White, unfocusedTextColor = Color.White,
-                    focusedContainerColor = Color(0xFF171717), unfocusedContainerColor = Color(0xFF171717),
-                    focusedLabelColor = LocalAccent.current, unfocusedLabelColor = Color(0xFF9CA3AF),
-                    cursorColor = LocalAccent.current, focusedPlaceholderColor = Color(0xFF8B949E),
-                    unfocusedPlaceholderColor = Color(0xFF8B949E)
+                    focusedBorderColor = LocalAccent.current, unfocusedBorderColor = Nx.Border,
+                    focusedTextColor = Nx.Text, unfocusedTextColor = Nx.Text,
+                    focusedContainerColor = Nx.Surface, unfocusedContainerColor = Nx.Surface,
+                    focusedLabelColor = LocalAccent.current, unfocusedLabelColor = Nx.Muted,
+                    cursorColor = LocalAccent.current, focusedPlaceholderColor = Nx.Faint,
+                    unfocusedPlaceholderColor = Nx.Faint
                 ),
                 label = { Text("Remote log file path") },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
@@ -165,12 +165,12 @@ fun LogsScreen(
             singleLine = true,
             shape = RoundedCornerShape(16.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = LocalAccent.current, unfocusedBorderColor = Color(0xFF454545),
-                    focusedTextColor = Color.White, unfocusedTextColor = Color.White,
-                    focusedContainerColor = Color(0xFF171717), unfocusedContainerColor = Color(0xFF171717),
-                    focusedLabelColor = LocalAccent.current, unfocusedLabelColor = Color(0xFF9CA3AF),
-                    cursorColor = LocalAccent.current, focusedPlaceholderColor = Color(0xFF8B949E),
-                    unfocusedPlaceholderColor = Color(0xFF8B949E)
+                    focusedBorderColor = LocalAccent.current, unfocusedBorderColor = Nx.Border,
+                    focusedTextColor = Nx.Text, unfocusedTextColor = Nx.Text,
+                    focusedContainerColor = Nx.Surface, unfocusedContainerColor = Nx.Surface,
+                    focusedLabelColor = LocalAccent.current, unfocusedLabelColor = Nx.Muted,
+                    cursorColor = LocalAccent.current, focusedPlaceholderColor = Nx.Faint,
+                    unfocusedPlaceholderColor = Nx.Faint
                 ),
             placeholder = { Text("Filter lines") },
             leadingIcon = { Icon(Icons.Rounded.Search, null, tint = Color(0xFF9CA3AF)) }

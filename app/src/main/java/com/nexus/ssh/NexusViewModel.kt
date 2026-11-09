@@ -269,7 +269,7 @@ class NexusViewModel(private val app: Application) : AndroidViewModel(app) {
                     pending.setLength(0)
                     pending.append(first)
                     while (true) {
-                        val next = withTimeoutOrNull(40) { chunks.receive() } ?: break
+                        val next = withTimeoutOrNull(24) { chunks.receive() } ?: break
                         pending.append(next)
                         if (pending.length >= 8_192) break
                     }
