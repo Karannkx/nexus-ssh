@@ -178,7 +178,7 @@ fun ServersScreen(
                             size = 9.dp
                         )
                         Spacer(Modifier.width(14.dp))
-                        Icon(spec.icon, contentDescription = spec.label, tint = spec.tint, modifier = Modifier.size(26.dp))
+                        Icon(spec.icon, contentDescription = spec.label, tint = if (Nx.Dark && spec.key == "db") Color(0xFFB8C2D6) else spec.tint, modifier = Modifier.size(26.dp))
                         Spacer(Modifier.width(14.dp))
                         Column(Modifier.weight(1f)) {
                             Text(server.name, color = Nx.Text, fontSize = 17.sp, fontWeight = FontWeight.Medium, maxLines = 1)

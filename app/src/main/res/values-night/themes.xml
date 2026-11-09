@@ -1,0 +1,15 @@
+<resources>
+    <style name="Theme.NexusSSH" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowBackground">@color/nexus_bg</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+    <style name="Theme.NexusSSH.Starting" parent="Theme.SplashScreen">
+        <item name="android:windowBackground">#10121A</item>
+        <item name="windowSplashScreenBackground">#10121A</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_transparent</item>
+        <item name="windowSplashScreenAnimationDuration">0</item>
+        <item name="postSplashScreenTheme">@style/Theme.NexusSSH</item>
+    </style>
+</resources>

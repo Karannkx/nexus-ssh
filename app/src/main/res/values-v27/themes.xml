@@ -1,5 +1,4 @@
 <resources>
-    <!-- API 27+: light navigation bar is supported. Keep the base theme compatible with API 26. -->
     <style name="Theme.NexusSSH" parent="android:Theme.Material.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>

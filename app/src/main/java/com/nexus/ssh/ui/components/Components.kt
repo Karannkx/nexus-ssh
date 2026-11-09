@@ -117,7 +117,7 @@ fun StatusDot(color: Color, modifier: Modifier = Modifier, size: Dp = 10.dp) {
 fun NexusLogo(modifier: Modifier = Modifier, size: Dp = 46.dp) {
     Box(modifier.size(size), contentAlignment = Alignment.Center) {
         Image(
-            painter = painterResource(if (com.nexus.ssh.ui.Nx.Dark) R.drawable.nexus_mark_white else R.drawable.nexus_mark_green),
+            painter = painterResource(if (com.nexus.ssh.ui.Nx.Dark) R.drawable.nexus_mark_white else R.drawable.nexus_mark_black),
             contentDescription = "Nexus SSH",
             modifier = Modifier.size(size * 0.78f)
         )

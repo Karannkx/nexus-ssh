@@ -253,8 +253,12 @@ fun NexusApp(
     var startupVisible by rememberSaveable { mutableStateOf(true) }
     LaunchedEffect(loaded) {
         if (loaded && startupVisible) {
+            // Keep the branded Initializing screen visible long enough to be perceived,
+            // even when local preferences/server data load almost instantly.
+            delay(2200)
             startupStage = 1
-            delay(1500)
+            // Give the module checklist a deliberate, readable hold before entering Home.
+            delay(3800)
             startupVisible = false
         }
     }
