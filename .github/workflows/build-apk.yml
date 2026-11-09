@@ -52,7 +52,9 @@ jobs:
           test -f app/src/main/java/com/nexus/ssh/MainActivity.kt
           grep -q 'com.adamglin:phosphor-icon:1.0.0' app/build.gradle.kts
           grep -q 'import androidx.compose.foundation.layout.height' app/src/main/java/com/nexus/ssh/MainActivity.kt
-          grep -q 'import androidx.compose.ui.text.font.FontFamily' app/src/main/java/com/nexus/ssh/ui/Theme.kt
+          grep -q 'FontFamily' app/src/main/java/com/nexus/ssh/ui/Theme.kt
+          grep -q 'fun NexusTheme' app/src/main/java/com/nexus/ssh/ui/Theme.kt
+          grep -q 'darkColorScheme' app/src/main/java/com/nexus/ssh/ui/Theme.kt
           grep -q 'import com.nexus.ssh.ui.LocalAccent' app/src/main/java/com/nexus/ssh/ui/screens/LogsScreen.kt
           ! grep -R 'PhosphorIcons\\.Regular\\.' app/src/main/java
           grep -q 'downloadDesignFonts' app/build.gradle.kts
