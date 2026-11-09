@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -35,6 +36,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.ContentPaste
@@ -78,7 +80,6 @@ import com.nexus.ssh.ui.LocalAccent
 import com.nexus.ssh.ui.Nx
 import com.nexus.ssh.ui.PromptIcon
 import com.nexus.ssh.ui.components.EmptyState
-import com.nexus.ssh.ui.components.ScreenTopBar
 import kotlinx.coroutines.delay
 
 private class TermKey(val label: String, val bytes: String)
@@ -181,24 +182,36 @@ fun TerminalScreen(
         }
     }
     LaunchedEffect(lines.size, lines.lastOrNull(), activeTab) {
-        if (lines.isNotEmpty()) listState.scrollToItem(lines.lastIndex)
+        if (lines.isNotEmpty()) {
+            delay(35)
+            listState.scrollToItem(lines.lastIndex)
+        }
     }
 
-    Column(Modifier.fillMaxSize()) {
-        ScreenTopBar("Terminal", onBack, subtitle = serverName.ifBlank { null }) {
+    Column(Modifier.fillMaxSize().background(Color.Black)) {
+        Row(
+            Modifier.fillMaxWidth().background(Color.Black).statusBarsPadding().heightIn(min = 58.dp)
+                .padding(horizontal = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back", tint = Color(0xFFE5E7EB)) }
+            Column(Modifier.weight(1f)) {
+                Text("Terminal", color = Color.White, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
+                Text(serverName.ifBlank { "SSH session" }, color = Color(0xFF9CA3AF), fontSize = 11.sp, maxLines = 1)
+            }
             IconButton(onClick = { showKeyboard() }, enabled = connected) {
-                Icon(Icons.Rounded.Keyboard, contentDescription = "Show keyboard", tint = if (connected) Nx.Green else Nx.Faint)
+                Icon(Icons.Rounded.Keyboard, contentDescription = "Show keyboard", tint = if (connected) Color(0xFFB7C4BB) else Color(0xFF666666))
             }
             IconButton(
                 onClick = { clipboard.getText()?.text?.let { send(it.replace("\r\n", "\n")) } },
                 enabled = connected
-            ) { Icon(Icons.Rounded.ContentPaste, contentDescription = "Paste", tint = if (connected) Nx.Green else Nx.Faint) }
+            ) { Icon(Icons.Rounded.ContentPaste, contentDescription = "Paste", tint = if (connected) Color(0xFFB7C4BB) else Color(0xFF666666)) }
             IconButton(
                 onClick = { clipboard.setText(AnnotatedString(lines.joinToString("\n") { it.trimEnd() }.trimEnd())) },
                 enabled = lines.isNotEmpty()
-            ) { Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy output", tint = if (lines.isNotEmpty()) Color.White else Nx.Faint) }
+            ) { Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy output", tint = if (lines.isNotEmpty()) Color(0xFFB7C4BB) else Color(0xFF666666)) }
             IconButton(onClick = onClear, enabled = connected) {
-                Icon(Icons.Rounded.DeleteSweep, contentDescription = "Clear", tint = if (connected) Nx.Green else Nx.Faint)
+                Icon(Icons.Rounded.DeleteSweep, contentDescription = "Clear", tint = if (connected) Color(0xFFB7C4BB) else Color(0xFF666666))
             }
         }
 
@@ -222,15 +235,15 @@ fun TerminalScreen(
                         Modifier
                             .heightIn(min = 40.dp)
                             .clip(RoundedCornerShape(14.dp))
-                            .background(if (sel) LocalAccent.current else Nx.SurfaceHigh)
+                            .background(if (sel) LocalAccent.current else Color(0xFF202020))
                             .clickable { onSelectTab(tab.id) }
                             .padding(start = 14.dp, end = if (tabs.size > 1) 4.dp else 14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(tab.title, color = if (sel) Color.White else Nx.Muted, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        Text(tab.title, color = if (sel) Color.White else Color(0xFFB8B8B8), fontSize = 14.sp, fontWeight = FontWeight.Medium)
                         if (tabs.size > 1) {
                             IconButton(onClick = { onCloseTab(tab.id) }, modifier = Modifier.size(34.dp)) {
-                                Icon(Icons.Rounded.Close, "Close tab", tint = if (sel) Color.White else Nx.Muted, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Rounded.Close, "Close tab", tint = if (sel) Color.White else Color(0xFFB8B8B8), modifier = Modifier.size(16.dp))
                             }
                         }
                     }
@@ -248,7 +261,7 @@ fun TerminalScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 10.dp, vertical = 6.dp)
                 .clip(RoundedCornerShape(18.dp))
-                .background(Nx.Terminal.copy(alpha = 0.94f))
+                .background(Color.Black)
                 .border(0.5.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(18.dp))
                 .pointerInput(Unit) { detectTapGestures(onTap = { showKeyboard() }) }
         ) {
@@ -259,18 +272,14 @@ fun TerminalScreen(
             Column(Modifier.fillMaxSize()) {
                 Row(
                     Modifier.fillMaxWidth()
-                        .background(Color(0xFF111916))
+                        .background(Color(0xFF101010))
                         .padding(horizontal = 13.dp, vertical = 9.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                        listOf(Color(0xFFFF6259), Color(0xFFFFC04D), Color(0xFF35C96F)).forEach { dot ->
-                            Box(Modifier.size(8.dp).clip(RoundedCornerShape(50)).background(dot))
-                        }
-                    }
+                    Box(Modifier.size(8.dp).clip(RoundedCornerShape(50)).background(if (connected) Color(0xFF36C98F) else Color(0xFF6B7280)))
                     Text(
-                        "  ${serverName.ifBlank { "remote" }}  ·  SSH",
-                        color = Color(0xFF9BAAA1),
+                        "  ${serverName.ifBlank { "remote" }}@nexus:~  $ ",
+                        color = Color(0xFFB9C6BD),
                         fontFamily = GeistMonoFamily,
                         fontSize = 11.sp,
                         maxLines = 1,
@@ -279,13 +288,13 @@ fun TerminalScreen(
                     Box(Modifier.size(7.dp).clip(RoundedCornerShape(50))
                         .background(if (connected) Color(0xFF39D98A) else Color(0xFF718078)))
                 }
-                Box(Modifier.fillMaxWidth().heightIn(min = 1.dp).background(Color(0xFF26332C)))
+                Box(Modifier.fillMaxWidth().heightIn(min = 1.dp).background(Color(0xFF242424)))
                 LazyColumn(
                     state = listState,
                     modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(1.dp)
                 ) {
-                    itemsIndexed(lines) { index, line ->
+                    itemsIndexed(lines, key = { index, _ -> index }) { index, line ->
                         if (index == lines.lastIndex && connected) {
                             CursorLine(line, cursor, fontSize)
                         } else {
@@ -309,7 +318,7 @@ fun TerminalScreen(
             Modifier
                 .fillMaxWidth()
                 .imePadding()
-                .background(Color(0xFF10131A))
+                .background(Color(0xFF090909))
                 .horizontalScroll(rememberScrollState())
                 .padding(horizontal = 8.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -404,7 +413,7 @@ private fun KeyButton(label: String, active: Boolean, enabled: Boolean, onClick:
             .heightIn(min = 42.dp)
             .widthIn(min = 46.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(if (active) accent else Color(0xFF17251F))
+            .background(if (active) accent else Color(0xFF202020))
             .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = 12.dp),
         contentAlignment = Alignment.Center

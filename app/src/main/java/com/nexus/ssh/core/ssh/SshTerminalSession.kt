@@ -5,6 +5,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -31,6 +33,26 @@ class SshTerminalSession(
     val terminalOutput: SharedFlow<String> = _terminalOutput.asSharedFlow()
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    // A single IO writer coalesces rapid key events; avoids launching a coroutine and flushing
+    // the SSH stream separately for every character typed into the terminal.
+    private val inputQueue = Channel<String>(Channel.UNLIMITED)
+
+    init {
+        scope.launch {
+            for (first in inputQueue) {
+                val batch = StringBuilder(first)
+                withTimeoutOrNull(5) {
+                    while (batch.length < 4096) batch.append(inputQueue.receive())
+                }
+                try {
+                    outputStream?.write(batch.toString().toByteArray(Charsets.UTF_8))
+                    outputStream?.flush()
+                } catch (e: Exception) {
+                    _terminalOutput.emit("\r\n[write failed: ${e.message}]\r\n")
+                }
+            }
+        }
+    }
 
     suspend fun openShell(cols: Int, rows: Int): Result<Unit> = withContext(Dispatchers.IO) {
         val client = connectionManager.getClient()
@@ -71,13 +93,8 @@ class SshTerminalSession(
         }
     }
 
-    suspend fun sendInput(data: String) = withContext(Dispatchers.IO) {
-        try {
-            outputStream?.write(data.toByteArray(Charsets.UTF_8))
-            outputStream?.flush()
-        } catch (e: Exception) {
-            _terminalOutput.emit("\r\n[write failed: ${e.message}]\r\n")
-        }
+    fun sendInput(data: String) {
+        if (data.isNotEmpty()) inputQueue.trySend(data)
     }
 
     suspend fun resize(cols: Int, rows: Int) = withContext(Dispatchers.IO) {
@@ -88,6 +105,7 @@ class SshTerminalSession(
     }
 
     fun close() {
+        while (inputQueue.tryReceive().isSuccess) { /* discard stale keystrokes on session close */ }
         readJob?.cancel()
         readJob = null
         try {

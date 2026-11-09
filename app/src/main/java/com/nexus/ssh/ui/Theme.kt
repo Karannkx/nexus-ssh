@@ -15,9 +15,12 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
@@ -38,13 +41,13 @@ import com.nexus.ssh.R
 
 /** Colour palette taken from the reference design. */
 object Nx {
-    val Bg = Color(0xFFF7F8F3)
-    val BgTop = Color(0xFFFBFCF8)
-    val Surface = Color(0xFFFFFFFF)
-    val SurfaceHigh = Color(0xFFF0F3ED)
-    val Text = Color(0xFF14271D)
-    val Muted = Color(0xFF68776D)
-    val Faint = Color(0xFF9AA79D)
+    var Bg by mutableStateOf(Color(0xFFF7F8F3))
+    var BgTop by mutableStateOf(Color(0xFFFBFCF8))
+    var Surface by mutableStateOf(Color(0xFFFFFFFF))
+    var SurfaceHigh by mutableStateOf(Color(0xFFF0F3ED))
+    var Text by mutableStateOf(Color(0xFF14271D))
+    var Muted by mutableStateOf(Color(0xFF68776D))
+    var Faint by mutableStateOf(Color(0xFF9AA79D))
     val Blue = Color(0xFF2388D8)
     val Cyan = Color(0xFF20B7C8)
     val Purple = Color(0xFF9876D7)
@@ -52,9 +55,24 @@ object Nx {
     val Magenta = Color(0xFFE34D8B)
     val Amber = Color(0xFFE59A24)
     val Red = Color(0xFFD94B55)
-    val Terminal = Color(0xFF071A14)
-    val Border = Color(0xFFDDE5DC)
+    var Terminal by mutableStateOf(Color(0xFF000000))
+    var Border by mutableStateOf(Color(0xFFDDE5DC))
     val OnAccent = Color(0xFFFFFFFF)
+
+    /** Keep legacy screen palette references in sync with the selected app appearance. */
+    fun applyTheme(dark: Boolean) {
+        if (dark) {
+            Bg = Color(0xFF090D0A); BgTop = Color(0xFF0D120F)
+            Surface = Color(0xFF141B16); SurfaceHigh = Color(0xFF202A23)
+            Text = Color(0xFFE8F0E9); Muted = Color(0xFFACB9AF); Faint = Color(0xFF78877D)
+            Border = Color(0xFF35443A); Terminal = Color.Black
+        } else {
+            Bg = Color(0xFFF7F8F3); BgTop = Color(0xFFFBFCF8)
+            Surface = Color.White; SurfaceHigh = Color(0xFFF0F3ED)
+            Text = Color(0xFF14271D); Muted = Color(0xFF68776D); Faint = Color(0xFF9AA79D)
+            Border = Color(0xFFDDE5DC); Terminal = Color.Black
+        }
+    }
 }
 
 val AccentOptions = listOf("green", "blue", "cyan", "purple", "magenta")
@@ -108,6 +126,7 @@ private fun Typography.withFonts(body: FontFamily, display: FontFamily) = Typogr
 
 @Composable
 fun NexusTheme(accent: Color = Nx.Green, dark: Boolean = false, content: @Composable () -> Unit) {
+    SideEffect { Nx.applyTheme(dark) }
     val scheme = if (dark) darkColorScheme(
         primary = accent,
         onPrimary = Color(0xFF071A14),
@@ -160,7 +179,7 @@ fun NexusTheme(accent: Color = Nx.Green, dark: Boolean = false, content: @Compos
 /** Clean translucent light surface with a quiet border. */
 fun Modifier.glass(shape: Shape = RoundedCornerShape(22.dp), fill: Float = 0.96f): Modifier = this
     .clip(shape)
-    .background(Color.White.copy(alpha = fill), shape)
+    .background(Nx.Surface.copy(alpha = fill), shape)
     .border(1.dp, Nx.Border.copy(alpha = 0.92f), shape)
 
 @Composable
@@ -172,8 +191,8 @@ fun nexusFieldColors(): TextFieldColors {
         focusedLabelColor = accent,
         unfocusedLabelColor = Nx.Muted,
         cursorColor = accent,
-        focusedContainerColor = Color(0xFFFFFFFF),
-        unfocusedContainerColor = Color(0xFFFFFFFF),
+        focusedContainerColor = Nx.Surface,
+        unfocusedContainerColor = Nx.Surface,
         focusedTextColor = Nx.Text,
         unfocusedTextColor = Nx.Text,
         disabledTextColor = Nx.Muted,
@@ -186,10 +205,11 @@ fun nexusFieldColors(): TextFieldColors {
 @Composable
 fun NexusBackdrop(wallpaper: Boolean, modifier: Modifier = Modifier) {
     val wp by animateFloatAsState(if (wallpaper) 1f else 0f, tween(350), label = "wallpaper")
+    val useDarkWallpaper = Nx.Bg.red < 0.2f
     Box(modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Nx.BgTop, Nx.Bg)))) {
         if (wp > 0.01f) {
             Image(
-                painter = painterResource(R.drawable.bg_wallpaper),
+                painter = painterResource(if (useDarkWallpaper) R.drawable.bg_wallpaper_dark else R.drawable.bg_wallpaper),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize().alpha(wp),
                 contentScale = ContentScale.Crop

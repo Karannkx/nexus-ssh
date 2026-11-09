@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -21,10 +23,12 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,9 +51,7 @@ import com.nexus.ssh.ui.LocalAccent
 import com.nexus.ssh.ui.components.EmptyState
 import com.nexus.ssh.ui.components.ErrorBox
 import com.nexus.ssh.ui.components.LoadingBar
-import com.nexus.ssh.ui.components.ScreenTopBar
 import com.nexus.ssh.ui.glass
-import com.nexus.ssh.ui.nexusFieldColors
 
 @Composable
 fun LogsScreen(
@@ -78,12 +80,20 @@ fun LogsScreen(
         if (shown.isNotEmpty()) listState.scrollToItem(shown.lastIndex)
     }
 
-    Column(Modifier.fillMaxSize()) {
-        ScreenTopBar("Logs", onBack, subtitle = serverName.ifBlank { null }) {
+    Column(Modifier.fillMaxSize().background(Color.Black)) {
+        Row(
+            Modifier.fillMaxWidth().background(Color.Black).statusBarsPadding().heightIn(min = 58.dp).padding(horizontal = 8.dp),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back", tint = Color.White) }
+            Column(Modifier.weight(1f)) {
+                Text("Logs", color = Color.White, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
+                Text(serverName.ifBlank { "Remote system logs" }, color = Color(0xFF9CA3AF), fontSize = 11.sp, maxLines = 1)
+            }
             IconButton(
                 onClick = { if (state.source != null) onLoadSource(state.source) else onLoadFile(path) },
                 enabled = connected
-            ) { Icon(Icons.Rounded.Refresh, contentDescription = "Refresh", tint = if (connected) Nx.Green else Nx.Faint) }
+            ) { Icon(Icons.Rounded.Refresh, contentDescription = "Refresh", tint = if (connected) Color(0xFFB7C4BB) else Color(0xFF666666)) }
         }
         if (!connected) {
             EmptyState(
@@ -104,12 +114,12 @@ fun LogsScreen(
                 val sel = state.source == src
                 Text(
                     src.label,
-                    color = if (sel) Color.White else Nx.Muted,
+                    color = if (sel) Color.White else Color(0xFFB8B8B8),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
-                        .background(if (sel) LocalAccent.current else Nx.SurfaceHigh)
+                        .background(if (sel) LocalAccent.current else Color(0xFF242424))
                         .clickable { onLoadSource(src) }
                         .padding(horizontal = 14.dp, vertical = 7.dp)
                 )
@@ -117,12 +127,12 @@ fun LogsScreen(
             val fileSel = state.source == null
             Text(
                 "File",
-                color = if (fileSel) Color.White else Nx.Muted,
+                color = if (fileSel) Color.White else Color(0xFFB8B8B8),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (fileSel) LocalAccent.current else Nx.SurfaceHigh)
+                    .background(if (fileSel) LocalAccent.current else Color(0xFF242424))
                     .clickable { onLoadFile(path) }
                     .padding(horizontal = 14.dp, vertical = 7.dp)
             )
@@ -135,7 +145,14 @@ fun LogsScreen(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                 singleLine = true,
                 shape = RoundedCornerShape(16.dp),
-                colors = nexusFieldColors(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = LocalAccent.current, unfocusedBorderColor = Color(0xFF454545),
+                    focusedTextColor = Color.White, unfocusedTextColor = Color.White,
+                    focusedContainerColor = Color(0xFF171717), unfocusedContainerColor = Color(0xFF171717),
+                    focusedLabelColor = LocalAccent.current, unfocusedLabelColor = Color(0xFF9CA3AF),
+                    cursorColor = LocalAccent.current, focusedPlaceholderColor = Color(0xFF8B949E),
+                    unfocusedPlaceholderColor = Color(0xFF8B949E)
+                ),
                 label = { Text("Remote log file path") },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
                 keyboardActions = KeyboardActions(onGo = { onLoadFile(path) })
@@ -147,9 +164,16 @@ fun LogsScreen(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
             singleLine = true,
             shape = RoundedCornerShape(16.dp),
-            colors = nexusFieldColors(),
+            colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = LocalAccent.current, unfocusedBorderColor = Color(0xFF454545),
+                    focusedTextColor = Color.White, unfocusedTextColor = Color.White,
+                    focusedContainerColor = Color(0xFF171717), unfocusedContainerColor = Color(0xFF171717),
+                    focusedLabelColor = LocalAccent.current, unfocusedLabelColor = Color(0xFF9CA3AF),
+                    cursorColor = LocalAccent.current, focusedPlaceholderColor = Color(0xFF8B949E),
+                    unfocusedPlaceholderColor = Color(0xFF8B949E)
+                ),
             placeholder = { Text("Filter lines") },
-            leadingIcon = { Icon(Icons.Rounded.Search, null, tint = Nx.Muted) }
+            leadingIcon = { Icon(Icons.Rounded.Search, null, tint = Color(0xFF9CA3AF)) }
         )
         LoadingBar(state.loading)
         state.error?.let { ErrorBox(it, Modifier.padding(16.dp)) }
@@ -159,11 +183,11 @@ fun LogsScreen(
                 .weight(1f)
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
-                .glass(RoundedCornerShape(18.dp), fill = 0.5f)
-                .background(Nx.Terminal.copy(alpha = 0.78f))
+                .clip(RoundedCornerShape(18.dp))
+                .background(Color.Black)
         ) {
             if (shown.isEmpty() && !state.loading && state.error == null) {
-                Text("No log lines.", color = Nx.Muted, fontSize = 13.sp, modifier = Modifier.padding(16.dp))
+                Text("No log lines.", color = Color(0xFF9CA3AF), fontSize = 13.sp, modifier = Modifier.padding(16.dp))
             }
             LazyColumn(
                 state = listState,

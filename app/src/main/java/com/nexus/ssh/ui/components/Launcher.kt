@@ -70,8 +70,8 @@ fun AppTile(label: String, dragging: Boolean, modifier: Modifier = Modifier, gly
             Modifier
                 .size(64.dp)
                 .shadow(if (dragging) 14.dp else 5.dp, shape, ambientColor = Color(0x221C6B3B), spotColor = Color(0x221C6B3B))
-                .background(Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0xFFF0F4ED))), shape)
-                .border(1.dp, Color(0xFFE1E9DF), shape),
+                .background(Brush.verticalGradient(listOf(Nx.Surface, Nx.SurfaceHigh)), shape)
+                .border(1.dp, Nx.Border, shape),
             contentAlignment = Alignment.Center
         ) {
             glyph()

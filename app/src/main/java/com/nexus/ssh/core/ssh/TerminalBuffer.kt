@@ -5,7 +5,7 @@ package com.nexus.ssh.core.ssh
  * cursor left/right, delete/insert char and clear-screen, and swallows colour/OSC/other escape sequences.
  * Full-screen programs (vim, htop) are not supported.
  */
-class TerminalBuffer(private val maxLines: Int = 1000) {
+class TerminalBuffer(private val maxLines: Int = 500) {
 
     private enum class Mode { NORMAL, ESC, CSI, OSC, OSC_ESC, SKIP_ONE }
 

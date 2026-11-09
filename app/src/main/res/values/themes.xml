@@ -8,7 +8,8 @@
 
     <!-- Splash shown while the app starts (androidx core-splashscreen, works on Android 8+) -->
     <style name="Theme.NexusSSH.Starting" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/nexus_bg</item>
+        <item name="android:windowBackground">#06291D</item>
+        <item name="windowSplashScreenBackground">#06291D</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/splash_transparent</item>
         <item name="postSplashScreenTheme">@style/Theme.NexusSSH</item>
     </style>

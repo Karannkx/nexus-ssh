@@ -269,9 +269,9 @@ class NexusViewModel(private val app: Application) : AndroidViewModel(app) {
                     pending.setLength(0)
                     pending.append(first)
                     while (true) {
-                        val next = withTimeoutOrNull(24) { chunks.receive() } ?: break
+                        val next = withTimeoutOrNull(40) { chunks.receive() } ?: break
                         pending.append(next)
-                        if (pending.length >= 16_384) break
+                        if (pending.length >= 8_192) break
                     }
                     tab.buffer.write(pending.toString())
                     if (_activeTab.value == tab.id) publishActive()
@@ -315,7 +315,8 @@ class NexusViewModel(private val app: Application) : AndroidViewModel(app) {
 
     fun sendTerminalInput(data: String) {
         val session = tabs.firstOrNull { it.id == _activeTab.value }?.session ?: return
-        viewModelScope.launch { session.sendInput(data) }
+        // Non-blocking enqueue: key events never spawn a new ViewModel coroutine per character.
+        session.sendInput(data)
     }
 
     fun clearTerminal() {
